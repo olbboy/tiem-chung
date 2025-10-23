@@ -248,7 +248,7 @@ export const PersonalInfo = () => {
 
               return (
                 <Card
-                  key={member.ma_thanh_vien}
+                  key={member.doi_tuong_id}
                   className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200"
                 >
                   {/* Card Header with gradient */}
@@ -284,7 +284,7 @@ export const PersonalInfo = () => {
                         <div className="flex-1 min-w-0">
                           <span className="text-gray-600">Ngày sinh:</span>
                           <span className="ml-2 text-gray-900 font-medium">
-                            {new Date(member.ngay_sinh).toLocaleDateString('vi-VN')}
+                            {member.ngay_sinh}
                           </span>
                         </div>
                       </div>
