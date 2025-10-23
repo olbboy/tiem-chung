@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { apiService } from '../services/api';
-import type { LoginResponse } from '../types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -19,6 +18,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Check if token exists on mount
     const token = apiService.getToken();
+    console.log('[Auth] Checking existing token:', token ? 'found' : 'not found');
     if (token) {
       setIsAuthenticated(true);
     }
@@ -27,17 +27,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (phoneNumber: string, password: string) => {
     try {
-      const response: LoginResponse = await apiService.login(phoneNumber, password);
-      if (response.token) {
-        setIsAuthenticated(true);
-      }
+      console.log('[Auth] Login attempt');
+      await apiService.login(phoneNumber, password);
+
+      // API service now guarantees that token exists in response
+      // or throws an error, so we can safely set isAuthenticated
+      console.log('[Auth] Login successful, setting authenticated');
+      setIsAuthenticated(true);
     } catch (error) {
+      console.error('[Auth] Login failed:', error);
       setIsAuthenticated(false);
       throw error;
     }
   };
 
   const logout = () => {
+    console.log('[Auth] Logout');
     apiService.clearToken();
     setIsAuthenticated(false);
   };

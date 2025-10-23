@@ -40,6 +40,31 @@ const createApiInstance = (token?: string): AxiosInstance => {
   return axios.create(config);
 };
 
+// Helper function to extract token from various response structures
+const extractToken = (data: any): string | null => {
+  // Try different possible token field names
+  const tokenFields = ['token', 'accessToken', 'access_token', 'jwt', 'Token', 'AccessToken'];
+
+  for (const field of tokenFields) {
+    if (data[field] && typeof data[field] === 'string') {
+      console.log(`[API] Token found in field: ${field}`);
+      return data[field];
+    }
+  }
+
+  // Check if token is nested in data object
+  if (data.data) {
+    for (const field of tokenFields) {
+      if (data.data[field] && typeof data.data[field] === 'string') {
+        console.log(`[API] Token found in data.${field}`);
+        return data.data[field];
+      }
+    }
+  }
+
+  return null;
+};
+
 // API Service
 class ApiService {
   private token: string | null = null;
@@ -47,6 +72,7 @@ class ApiService {
   setToken(token: string) {
     this.token = token;
     localStorage.setItem('auth_token', token);
+    console.log('[API] Token saved to localStorage');
   }
 
   getToken(): string | null {
@@ -59,62 +85,157 @@ class ApiService {
   clearToken() {
     this.token = null;
     localStorage.removeItem('auth_token');
+    console.log('[API] Token cleared');
   }
 
   async login(phoneNumber: string, password: string): Promise<LoginResponse> {
-    const api = createApiInstance();
+    try {
+      const api = createApiInstance();
 
-    const requestData: LoginRequest = {
-      phoneNumber,
-      pass: password,
-      osType: '',
-      osVersion: '',
-      deviceId: '',
-      notificationToken: ''
-    };
+      const requestData: LoginRequest = {
+        phoneNumber,
+        pass: password,
+        osType: '',
+        osVersion: '',
+        deviceId: '',
+        notificationToken: ''
+      };
 
-    const response = await api.post<LoginResponse>('/auth', requestData);
+      console.log('[API] Login request:', { phoneNumber });
 
-    if (response.data.token) {
-      this.setToken(response.data.token);
+      const response = await api.post('/auth', requestData);
+      console.log('[API] Login response:', response.data);
+
+      // Extract token from response (flexible structure)
+      const token = extractToken(response.data);
+
+      if (!token) {
+        console.error('[API] No token found in response:', response.data);
+        throw new Error('Không tìm thấy token trong phản hồi từ server');
+      }
+
+      this.setToken(token);
+
+      // Return normalized response
+      return {
+        token,
+        ...response.data
+      };
+    } catch (error: any) {
+      console.error('[API] Login error:', error);
+
+      if (error.response) {
+        // Server responded with error
+        const message = error.response.data?.message ||
+                       error.response.data?.error ||
+                       error.response.data?.msg ||
+                       'Đăng nhập thất bại';
+        throw new Error(message);
+      } else if (error.request) {
+        // Request made but no response
+        throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        // Something else happened
+        throw error;
+      }
     }
-
-    return response.data;
   }
 
   async getThanhVien(): Promise<ThanhVienResponse> {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
 
-    const api = createApiInstance(token);
-    const response = await api.get<ThanhVienResponse>('/thanh_vien?theo_doi=1');
-    return response.data;
+      const api = createApiInstance(token);
+      console.log('[API] Fetching thanh vien list');
+
+      const response = await api.get('/thanh_vien?theo_doi=1');
+      console.log('[API] Thanh vien response:', response.data);
+
+      // Handle both array and object responses
+      if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data;
+      } else {
+        console.warn('[API] Unexpected response structure:', response.data);
+        return { data: [] };
+      }
+    } catch (error: any) {
+      console.error('[API] Get thanh vien error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải danh sách thành viên');
+    }
   }
 
   async getThanhVienDetail(memberId: number): Promise<ThanhVienDetail> {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
 
-    const api = createApiInstance(token);
-    const response = await api.get<ThanhVienDetail>(`/thanh_vien/${memberId}`);
-    return response.data;
+      const api = createApiInstance(token);
+      console.log('[API] Fetching member detail:', memberId);
+
+      const response = await api.get(`/thanh_vien/${memberId}`);
+      console.log('[API] Member detail response:', response.data);
+
+      // Handle nested data structure
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error('[API] Get member detail error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải thông tin thành viên');
+    }
   }
 
   async getVaccinationHistory(memberId: number): Promise<VaccinationHistoryResponse> {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
 
-    const api = createApiInstance(token);
-    const response = await api.get<VaccinationHistoryResponse>(
-      `/lich_su_tiem/khang_nguyen?doi_tuong_id=${memberId}`
-    );
-    return response.data;
+      const api = createApiInstance(token);
+      console.log('[API] Fetching vaccination history:', memberId);
+
+      const response = await api.get(
+        `/lich_su_tiem/khang_nguyen?doi_tuong_id=${memberId}`
+      );
+      console.log('[API] Vaccination history response:', response.data);
+
+      // Handle both array and object responses
+      if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data;
+      } else {
+        console.warn('[API] Unexpected response structure:', response.data);
+        return { data: [] };
+      }
+    } catch (error: any) {
+      console.error('[API] Get vaccination history error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải lịch sử tiêm chủng');
+    }
   }
 }
 
