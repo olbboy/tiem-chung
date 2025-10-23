@@ -60,15 +60,23 @@ export interface KhangNguyenResponse {
 export interface VacxinRecord {
   lich_su_tiem_id: number;
   doi_tuong_id: number;
-  ten_vaccine: string;
+  vacxin_id: number;
+  ten_vacxin: string; // Actual API field name
+  khang_nguyen: string; // Antibody name
   ngay_tiem: string;
   thu_tu_mui_tiem: number; // Dose order
-  thu_tu_hien_thi: number; // Display order
-  lo_vaccine?: string;
-  noi_tiem?: string;
+  thu_tu_hien_thi?: number; // Display order
+  lo_vacxin?: string; // Actual API field name
+  co_so_tiem_chung?: string; // Actual API field name
   nguoi_tiem?: string;
-  phan_ung_sau_tiem?: string;
+  phan_ung_sau_tiem?: {
+    ngay_phan_ung: string | null;
+    loai_phan_ung: string | null;
+    ket_qua: string | null;
+  } | string;
   trang_thai?: number;
+  seo?: string | null;
+  truoc_24h?: string | null;
   [key: string]: any;
 }
 
