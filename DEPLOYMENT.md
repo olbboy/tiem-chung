@@ -1,5 +1,18 @@
 # Hướng dẫn Deploy lên Cloudflare Pages
 
+## 🔴 ĐANG THẤY "HELLO WORLD" THAY VÌ APP?
+
+**→ Xem ngay [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) để fix!**
+
+Tóm tắt nhanh:
+1. Vào Cloudflare Dashboard → Settings → Builds & deployments
+2. Build output directory PHẢI LÀ: `dist` (không có `/` hay `.`)
+3. Root directory PHẢI TRỐNG
+4. Deploy command PHẢI TRỐNG
+5. Save → Retry deployment → Clear browser cache
+
+---
+
 ## ⚠️ LƯU Ý QUAN TRỌNG
 
 Nếu bạn đang gặp lỗi deployment, **BẮT BUỘC** phải xóa Deploy command trong Cloudflare Dashboard theo hướng dẫn bên dưới.
