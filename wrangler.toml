@@ -1,0 +1,9 @@
+name = "tiem-chung"
+compatibility_date = "2025-10-23"
+
+# Static assets configuration for Cloudflare Pages
+pages_build_output_dir = "./dist"
+
+# This tells wrangler to deploy as static assets
+[assets]
+directory = "./dist"
