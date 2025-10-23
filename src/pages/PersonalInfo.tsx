@@ -80,11 +80,13 @@ export const PersonalInfo = () => {
     const hiddenFields = [
       'ma_thanh_vien',    // Technical ID (already shown in header)
       'doi_tuong_id',     // Technical ID for API
-      'ho_va_ten',        // Already shown as title
+      'ho_ten',           // Already shown as title (actual API field)
+      'ho_va_ten',        // Legacy field name
       'gioi_tinh',        // Already shown as badge
       'ngay_sinh',        // Shown separately
-      'so_dien_thoai',    // Shown separately
-      'dia_chi',          // Shown separately
+      'dien_thoai',       // Shown separately (actual API field)
+      'so_dien_thoai',    // Legacy field name
+      'dia_chi',          // Legacy field - now split into multiple address fields
       'email',            // Shown separately
     ];
 
@@ -258,14 +260,14 @@ export const PersonalInfo = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-lg text-gray-900 leading-tight line-clamp-2">
-                            {member.ho_va_ten}
+                            {member.ho_ten}
                           </CardTitle>
                           <div className="flex items-center gap-2 mt-1.5">
                             <Badge
-                              variant={member.gioi_tinh === 'Nam' ? 'default' : 'secondary'}
+                              variant={member.gioi_tinh === 0 ? 'default' : 'secondary'}
                               className="text-xs"
                             >
-                              {member.gioi_tinh}
+                              {member.gioi_tinh === 0 ? 'Nam' : member.gioi_tinh === 1 ? 'Nữ' : 'Khác'}
                             </Badge>
                           </div>
                         </div>
@@ -288,13 +290,13 @@ export const PersonalInfo = () => {
                       </div>
                     )}
 
-                    {member.so_dien_thoai && (
+                    {member.dien_thoai && (
                       <div className="flex items-center gap-2.5 text-sm">
                         <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <span className="text-gray-600">Điện thoại:</span>
                           <span className="ml-2 text-gray-900 font-medium">
-                            {member.so_dien_thoai}
+                            {member.dien_thoai}
                           </span>
                         </div>
                       </div>

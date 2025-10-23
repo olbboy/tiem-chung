@@ -26,7 +26,12 @@ import {
   XCircle,
   Clock,
   FileText,
-  Sparkles
+  Phone,
+  MapPin,
+  Home,
+  Users,
+  Calendar,
+  IdCard
 } from 'lucide-react';
 
 export const VaccinationHistory = () => {
@@ -257,7 +262,7 @@ export const VaccinationHistory = () => {
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">
-                {memberDetail?.ho_va_ten || 'Hồ Sơ Tiêm Chủng'}
+                {memberDetail?.ho_ten || 'Hồ Sơ Tiêm Chủng'}
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
                 Thông tin cá nhân và lịch sử tiêm chủng
@@ -303,45 +308,169 @@ export const VaccinationHistory = () => {
             <TabsContent active={activeTab === 'personal-info'}>
               {memberDetail ? (
                 <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin cá nhân</h2>
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                      <User className="w-4 h-4 text-emerald-600" />
+                      Thông tin cơ bản
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <div className="text-sm font-medium text-gray-500">Họ và tên</div>
-                        <div className="text-base text-gray-900">{memberDetail.ho_va_ten || 'N/A'}</div>
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                        <IdCard className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-500 mb-1">Họ và tên</div>
+                          <div className="text-sm font-medium text-gray-900">{memberDetail.ho_ten || 'N/A'}</div>
+                        </div>
                       </div>
+
+                      {memberDetail.ma_doi_tuong && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                          <IdCard className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-500 mb-1">Mã đối tượng</div>
+                            <div className="text-sm font-medium text-gray-900">{memberDetail.ma_doi_tuong}</div>
+                          </div>
+                        </div>
+                      )}
+
                       {memberDetail.ngay_sinh && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-gray-500">Ngày sinh</div>
-                          <div className="text-base text-gray-900">{memberDetail.ngay_sinh}</div>
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                          <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-500 mb-1">Ngày sinh</div>
+                            <div className="text-sm font-medium text-gray-900">{memberDetail.ngay_sinh}</div>
+                          </div>
                         </div>
                       )}
-                      <div className="space-y-1.5">
-                        <div className="text-sm font-medium text-gray-500">Giới tính</div>
-                        <div className="text-base text-gray-900">
-                          {String(memberDetail.gioi_tinh) === '0' ? 'Nữ' : String(memberDetail.gioi_tinh) === '1' ? 'Nam' : 'Khác'}
+
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                        <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-500 mb-1">Giới tính</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {memberDetail.gioi_tinh === 0 ? 'Nam' : memberDetail.gioi_tinh === 1 ? 'Nữ' : 'Khác'}
+                          </div>
                         </div>
                       </div>
-                      {memberDetail.so_dien_thoai && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-gray-500">Số điện thoại</div>
-                          <div className="text-base text-gray-900">{memberDetail.so_dien_thoai}</div>
+
+                      {memberDetail.ten_dan_toc && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                          <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-500 mb-1">Dân tộc</div>
+                            <div className="text-sm font-medium text-gray-900">{memberDetail.ten_dan_toc}</div>
+                          </div>
                         </div>
                       )}
-                      {memberDetail.email && (
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <div className="text-sm font-medium text-gray-500">Email</div>
-                          <div className="text-base text-gray-900">{memberDetail.email}</div>
-                        </div>
-                      )}
-                      {memberDetail.dia_chi && (
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <div className="text-sm font-medium text-gray-500">Địa chỉ</div>
-                          <div className="text-base text-gray-900">{memberDetail.dia_chi}</div>
+
+                      {memberDetail.dien_thoai && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                          <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-500 mb-1">Số điện thoại</div>
+                            <div className="text-sm font-medium text-gray-900">{memberDetail.dien_thoai}</div>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Healthcare Facility */}
+                  {memberDetail.ten_co_so && (
+                    <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-emerald-600" />
+                        Cơ sở y tế
+                      </h3>
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                        <Building2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900">{memberDetail.ten_co_so}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Permanent Address */}
+                  {(memberDetail.ho_khau_tinh || memberDetail.ho_khau_huyen || memberDetail.ho_khau_xa || memberDetail.ho_khau_dia_chi) && (
+                    <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <Home className="w-4 h-4 text-emerald-600" />
+                        Địa chỉ hộ khẩu
+                      </h3>
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900">
+                            {[
+                              memberDetail.ho_khau_dia_chi,
+                              memberDetail.ho_khau_thon_ap,
+                              memberDetail.ho_khau_xa,
+                              memberDetail.ho_khau_huyen,
+                              memberDetail.ho_khau_tinh
+                            ].filter(Boolean).join(', ')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Temporary Address */}
+                  {(memberDetail.tam_tru_tinh || memberDetail.tam_tru_huyen || memberDetail.tam_tru_xa || memberDetail.tam_tru_dia_chi) && (
+                    <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        Địa chỉ tạm trú
+                      </h3>
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900">
+                            {[
+                              memberDetail.tam_tru_dia_chi,
+                              memberDetail.tam_tru_thon_ap,
+                              memberDetail.tam_tru_xa,
+                              memberDetail.tam_tru_huyen,
+                              memberDetail.tam_tru_tinh
+                            ].filter(Boolean).join(', ')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Caregivers */}
+                  {memberDetail.ds_nguoi_cham_soc && memberDetail.ds_nguoi_cham_soc.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        Người chăm sóc
+                      </h3>
+                      <div className="space-y-3">
+                        {memberDetail.ds_nguoi_cham_soc.map((caregiver, index) => (
+                          <div key={`caregiver-${index}-${caregiver.so_dien_thoai}`} className="p-3 rounded-lg bg-gray-50 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-900">{caregiver.ho_ten}</span>
+                              {caregiver.mac_dinh === 1 && (
+                                <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">
+                                  Mặc định
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 ml-6">
+                              {caregiver.nam_sinh && (
+                                <div>Năm sinh: {caregiver.nam_sinh}</div>
+                              )}
+                              {caregiver.so_dien_thoai && (
+                                <div>SĐT: {caregiver.so_dien_thoai}</div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
@@ -454,50 +583,92 @@ export const VaccinationHistory = () => {
       {/* Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         {selectedVaccine && (
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-                Thông tin chi tiết
+              <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <Syringe className="w-5 h-5 text-emerald-600" />
+                </div>
+                Chi tiết mũi tiêm
               </DialogTitle>
               <DialogClose onClick={() => setIsDialogOpen(false)} />
             </DialogHeader>
 
-            <div className="space-y-6 mt-4">
-              {/* Vaccine Info */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900">Thông tin vắc xin</h3>
+            <div className="space-y-5 mt-6">
+              {/* Main Vaccine Info Card */}
+              <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 p-5 border border-emerald-100">
                 <div className="space-y-3">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-sm text-gray-500">Vắc xin</span>
-                    <span className="text-sm font-medium text-gray-900">{selectedVaccine.ten_vacxin}</span>
+                  <div>
+                    <div className="text-xs font-medium text-emerald-600 mb-1.5 uppercase tracking-wide">Vắc xin</div>
+                    <h3 className="text-lg font-semibold text-gray-900">{selectedVaccine.ten_vacxin}</h3>
                   </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-sm text-gray-500">Kháng nguyên</span>
-                    <span className="text-sm font-medium text-gray-900">{selectedVaccine.khang_nguyen}</span>
+
+                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-emerald-100">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-1">Kháng nguyên</div>
+                      <div className="text-sm font-medium text-gray-900">{selectedVaccine.khang_nguyen}</div>
+                    </div>
+                    {selectedVaccine.thu_tu_mui_tiem && (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 mb-1">Mũi thứ</div>
+                        <Badge variant="outline" className="border-emerald-200 bg-white text-emerald-700 font-semibold">
+                          Mũi {selectedVaccine.thu_tu_mui_tiem}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              {selectedVaccine.trang_thai !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-500">Trạng thái:</span>
+                  {getStatusBadge(selectedVaccine.trang_thai)}
+                </div>
+              )}
+
+              {/* Vaccination Details */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-900">Thông tin tiêm chủng</h4>
+                <div className="space-y-2">
                   {selectedVaccine.ngay_tiem && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">Ngày tiêm</span>
-                      <span className="text-sm font-medium text-gray-900">{formatDate(selectedVaccine.ngay_tiem)}</span>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                      <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500">Ngày tiêm</div>
+                        <div className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(selectedVaccine.ngay_tiem)}</div>
+                      </div>
                     </div>
                   )}
-                  {selectedVaccine.lo_vacxin && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">Lô vắc xin</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedVaccine.lo_vacxin}</span>
-                    </div>
-                  )}
-                  {selectedVaccine.trang_thai !== undefined && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">Trạng thái</span>
-                      {getStatusBadge(selectedVaccine.trang_thai)}
-                    </div>
-                  )}
+
                   {selectedVaccine.co_so_tiem_chung && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">Cơ sở tiêm chủng</span>
-                      <span className="text-sm font-medium text-gray-900 text-right">{selectedVaccine.co_so_tiem_chung}</span>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                      <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500">Cơ sở tiêm chủng</div>
+                        <div className="text-sm font-medium text-gray-900 mt-0.5">{selectedVaccine.co_so_tiem_chung}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.lo_vacxin && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                      <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500">Số lô vắc xin</div>
+                        <div className="text-sm font-medium text-gray-900 mt-0.5 font-mono">{selectedVaccine.lo_vacxin}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.nguoi_tiem && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                      <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500">Người thực hiện tiêm</div>
+                        <div className="text-sm font-medium text-gray-900 mt-0.5">{selectedVaccine.nguoi_tiem}</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -509,24 +680,27 @@ export const VaccinationHistory = () => {
                   {(selectedVaccine.phan_ung_sau_tiem.loai_phan_ung ||
                     selectedVaccine.phan_ung_sau_tiem.ngay_phan_ung ||
                     selectedVaccine.phan_ung_sau_tiem.ket_qua) && (
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-gray-900">Phản ứng sau tiêm</h3>
-                      <div className="space-y-3">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                        Phản ứng sau tiêm
+                      </h4>
+                      <div className="space-y-2">
                         {selectedVaccine.phan_ung_sau_tiem.loai_phan_ung && (
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-sm text-gray-500">Mức độ phản ứng</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600">Loại phản ứng</span>
                             <span className="text-sm font-medium text-gray-900">{selectedVaccine.phan_ung_sau_tiem.loai_phan_ung}</span>
                           </div>
                         )}
                         {selectedVaccine.phan_ung_sau_tiem.ngay_phan_ung && (
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-sm text-gray-500">Thời gian phản ứng</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600">Thời gian</span>
                             <span className="text-sm font-medium text-gray-900">{formatDate(selectedVaccine.phan_ung_sau_tiem.ngay_phan_ung)}</span>
                           </div>
                         )}
                         {selectedVaccine.phan_ung_sau_tiem.ket_qua && (
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-sm text-gray-500">Kết quả</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600">Kết quả</span>
                             <span className="text-sm font-medium text-gray-900">{selectedVaccine.phan_ung_sau_tiem.ket_qua}</span>
                           </div>
                         )}
@@ -535,27 +709,12 @@ export const VaccinationHistory = () => {
                   )}
                 </>
               )}
-
-              {/* Additional Info */}
-              {(selectedVaccine.nguoi_tiem || selectedVaccine.thu_tu_mui_tiem) && (
-                <div className="pt-4 border-t">
-                  <div className="flex gap-4 text-xs text-gray-500">
-                    {selectedVaccine.nguoi_tiem && (
-                      <div>Người tiêm: {selectedVaccine.nguoi_tiem}</div>
-                    )}
-                    {selectedVaccine.thu_tu_mui_tiem && (
-                      <div>Mũi thứ: {selectedVaccine.thu_tu_mui_tiem}</div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 pt-6 border-t flex gap-3">
               <Button
                 onClick={() => setIsDialogOpen(false)}
-                variant="outline"
-                className="w-full"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 Đóng
               </Button>

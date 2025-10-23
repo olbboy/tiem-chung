@@ -15,14 +15,23 @@ export interface LoginResponse {
   [key: string]: any;
 }
 
+// Caregiver (Người chăm sóc)
+export interface NguoiChamSoc {
+  ho_ten: string;
+  nam_sinh: number;
+  so_dien_thoai: string;
+  cmnd?: string | null;
+  quan_he: number; // 1 = parent, etc.
+  mac_dinh: number; // 1 = default
+}
+
 export interface ThanhVien {
   ma_thanh_vien: number;
   doi_tuong_id: number; // ID for vaccination history API
-  ho_va_ten: string;
+  ho_ten: string; // Actual API field
   ngay_sinh: string;
-  gioi_tinh: string;
-  dia_chi: string;
-  so_dien_thoai: string;
+  gioi_tinh: number; // 0 = male, 1 = female
+  dien_thoai: string; // Actual API field
   email?: string;
   [key: string]: any;
 }
@@ -33,10 +42,43 @@ export interface ThanhVienResponse {
 }
 
 export interface ThanhVienDetail extends ThanhVien {
+  ma_doi_tuong?: string;
   cmnd?: string;
   cccd?: string;
-  dan_toc?: string;
-  nghe_nghiep?: string;
+  dan_toc_id?: number;
+  ten_dan_toc?: string; // Ethnicity name
+  co_so_id?: number;
+  ten_co_so?: string; // Healthcare facility name
+
+  // Permanent address (Hộ khẩu)
+  ho_khau_tinh_id?: number | null;
+  ho_khau_huyen_id?: number | null;
+  ho_khau_xa_id?: number | null;
+  ho_khau_thon_ap_id?: number | null;
+  ho_khau_tinh?: string | null;
+  ho_khau_huyen?: string | null;
+  ho_khau_xa?: string | null;
+  ho_khau_thon_ap?: string | null;
+  ho_khau_dia_chi?: string | null;
+
+  // Temporary address (Tạm trú)
+  tam_tru_tinh_id?: number | null;
+  tam_tru_huyen_id?: number | null;
+  tam_tru_xa_id?: number | null;
+  tam_tru_thon_ap_id?: number | null;
+  tam_tru_tinh?: string | null;
+  tam_tru_huyen?: string | null;
+  tam_tru_xa?: string | null;
+  tam_tru_thon_ap?: string | null;
+  tam_tru_dia_chi?: string | null;
+
+  theo_doi?: number;
+  hien_thi_mac_dinh?: string;
+  avatar?: string;
+  avatar_id?: number | null;
+  avatar_file_type?: string | null;
+  ds_nguoi_cham_soc?: NguoiChamSoc[];
+
   [key: string]: any;
 }
 
