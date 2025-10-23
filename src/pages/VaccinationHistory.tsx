@@ -40,7 +40,7 @@ export const VaccinationHistory = () => {
 
   useEffect(() => {
     if (memberId) {
-      const doiTuongId = parseInt(memberId);
+      const doiTuongId = safeParseNumber(memberId);
       const maThanhVien = location.state?.ma_thanh_vien;
 
       console.log('[VaccinationHistory] IDs:', {
@@ -48,7 +48,12 @@ export const VaccinationHistory = () => {
         ma_thanh_vien: maThanhVien
       });
 
-      fetchData(doiTuongId, maThanhVien);
+      if (doiTuongId) {
+        fetchData(doiTuongId, maThanhVien);
+      } else {
+        setError('ID không hợp lệ');
+        setLoading(false);
+      }
     }
   }, [memberId, location.state]);
 
@@ -76,13 +81,15 @@ export const VaccinationHistory = () => {
 
       setMemberDetail(detailResponse);
 
-      // Extract khang nguyen records
+      // Extract and sort khang nguyen records
       const khangNguyenData = khangNguyenResponse.data || khangNguyenResponse || [];
-      setKhangNguyenRecords(Array.isArray(khangNguyenData) ? khangNguyenData : [khangNguyenData]);
+      const khangNguyenArray = Array.isArray(khangNguyenData) ? khangNguyenData : [khangNguyenData];
+      setKhangNguyenRecords(sortByDate(khangNguyenArray));
 
-      // Extract vacxin records
+      // Extract and sort vacxin records
       const vacxinData = vacxinResponse.data || vacxinResponse || [];
-      setVacxinRecords(Array.isArray(vacxinData) ? vacxinData : [vacxinData]);
+      const vacxinArray = Array.isArray(vacxinData) ? vacxinData : [vacxinData];
+      setVacxinRecords(sortVacxinRecords(vacxinArray));
 
       console.log('[VaccinationHistory] Data loaded successfully');
     } catch (err: any) {
@@ -113,13 +120,116 @@ export const VaccinationHistory = () => {
     return true;
   };
 
-  // Helper to format number with thousand separators
-  const formatNumber = (num: number): string => {
+  // Safe number parsing - handles floats like 37208227.0
+  const safeParseNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+
+    const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+
+    if (isNaN(num) || !isFinite(num)) return null;
+
+    return Math.floor(num); // Convert float to integer
+  };
+
+  // Safe number formatting with thousand separators
+  const formatNumber = (value: any): string => {
+    const num = safeParseNumber(value);
+    if (num === null) return 'N/A';
+
     return num.toLocaleString('vi-VN');
   };
 
-  // Helper to get vaccination status badge
-  const getStatusBadge = (trangThai: number) => {
+  // Parse Vietnamese date format "10:12 02/11/2022" or return as-is
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr || typeof dateStr !== 'string') return 'N/A';
+
+    // If already in format "HH:MM DD/MM/YYYY", return as-is
+    if (/^\d{1,2}:\d{2}\s+\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
+      return dateStr;
+    }
+
+    // Try to parse ISO format or other formats
+    try {
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      }
+    } catch (e) {
+      console.warn('[VaccinationHistory] Date parse error:', e);
+    }
+
+    return dateStr; // Return original string if can't parse
+  };
+
+  // Sort records by date (newest first)
+  const sortByDate = (records: KhangNguyenRecord[]): KhangNguyenRecord[] => {
+    return [...records].sort((a, b) => {
+      // If one doesn't have date, put it at the end
+      if (!a.ngay_tiem) return 1;
+      if (!b.ngay_tiem) return -1;
+
+      // Try to compare dates
+      try {
+        const dateA = parseDateString(a.ngay_tiem);
+        const dateB = parseDateString(b.ngay_tiem);
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      } catch (e) {
+        return 0;
+      }
+    });
+  };
+
+  // Sort vacxin records by display order, then by dose order
+  const sortVacxinRecords = (records: VacxinRecord[]): VacxinRecord[] => {
+    return [...records].sort((a, b) => {
+      // First sort by thu_tu_hien_thi if available
+      const orderA = safeParseNumber(a.thu_tu_hien_thi) ?? 999;
+      const orderB = safeParseNumber(b.thu_tu_hien_thi) ?? 999;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      // Then sort by thu_tu_mui_tiem
+      const doseA = safeParseNumber(a.thu_tu_mui_tiem) ?? 999;
+      const doseB = safeParseNumber(b.thu_tu_mui_tiem) ?? 999;
+
+      return doseA - doseB;
+    });
+  };
+
+  // Parse date string "10:12 02/11/2022" to Date object
+  const parseDateString = (dateStr: string): Date => {
+    // Format: "HH:MM DD/MM/YYYY"
+    const match = dateStr.match(/(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+    if (match) {
+      const [, hours, minutes, day, month, year] = match;
+      return new Date(
+        parseInt(year),
+        parseInt(month) - 1, // Month is 0-indexed
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes)
+      );
+    }
+
+    // Fallback to standard parsing
+    return new Date(dateStr);
+  };
+
+  // Get vaccination status badge with proper null handling
+  const getStatusBadge = (trangThai?: number) => {
+    if (trangThai === undefined || trangThai === null) {
+      return null; // Don't show badge if status is not available
+    }
+
     if (trangThai === 2) {
       return (
         <Badge className="bg-green-500 hover:bg-green-600">
@@ -258,7 +368,6 @@ export const VaccinationHistory = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              {/* Basic Info Section */}
               <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <UserCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -299,7 +408,6 @@ export const VaccinationHistory = () => {
                 )}
               </div>
 
-              {/* Contact Info */}
               {(memberDetail.dia_chi || memberDetail.email) && (
                 <div className="space-y-3 pt-4 border-t border-gray-100">
                   {memberDetail.dia_chi && (
@@ -324,7 +432,6 @@ export const VaccinationHistory = () => {
                 </div>
               )}
 
-              {/* Additional Info */}
               {Object.entries(memberDetail).filter(([key]) => shouldShowField(key)).length > 0 && (
                 <div className="grid md:grid-cols-2 gap-3 pt-4 border-t border-gray-100 mt-4">
                   {Object.entries(memberDetail)
@@ -428,18 +535,14 @@ export const VaccinationHistory = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-lg text-blue-700 leading-tight">
-                                {record.ten_khang_nguyen}
+                                {record.ten_khang_nguyen || 'Chưa rõ tên'}
                               </CardTitle>
-                              <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                  <IdCard className="w-3 h-3" />
-                                  ID: {formatNumber(record.doi_tuong_id)}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Shield className="w-3 h-3" />
-                                  KN ID: {record.khang_nguyen_id}
-                                </span>
-                              </div>
+                              {record.ngay_tiem && (
+                                <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-600">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{formatDate(record.ngay_tiem)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                           {getStatusBadge(record.trang_thai)}
@@ -447,27 +550,18 @@ export const VaccinationHistory = () => {
                       </CardHeader>
 
                       <CardContent className="space-y-3">
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {record.ngay_tiem && (
-                            <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs text-gray-600">Ngày tiêm</div>
-                                <div className="text-sm font-semibold text-gray-900">
-                                  {record.ngay_tiem}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                            <Activity className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-gray-600">Lịch sử tiêm ID</div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {formatNumber(record.lich_su_tiem_id)}
-                              </div>
-                            </div>
+                        <div className="grid md:grid-cols-3 gap-3 text-xs text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <IdCard className="w-3 h-3 flex-shrink-0" />
+                            <span>ID: {formatNumber(record.lich_su_tiem_id)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-3 h-3 flex-shrink-0" />
+                            <span>KN: {formatNumber(record.khang_nguyen_id)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="w-3 h-3 flex-shrink-0" />
+                            <span>ĐT: {formatNumber(record.doi_tuong_id)}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -506,38 +600,29 @@ export const VaccinationHistory = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-lg text-green-700 leading-tight">
-                                {record.ten_vaccine}
+                                {record.ten_vaccine || 'Chưa rõ tên vaccine'}
                               </CardTitle>
-                              <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                  <Syringe className="w-3 h-3" />
-                                  Mũi số {record.thu_tu_mui_tiem}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <IdCard className="w-3 h-3" />
-                                  ID: {formatNumber(record.lich_su_tiem_id)}
-                                </span>
+                              <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-600">
+                                {record.thu_tu_mui_tiem !== undefined && record.thu_tu_mui_tiem !== null && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Mũi {record.thu_tu_mui_tiem}
+                                  </Badge>
+                                )}
+                                {record.ngay_tiem && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDate(record.ngay_tiem)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
-                          {record.trang_thai !== undefined && getStatusBadge(record.trang_thai)}
+                          {getStatusBadge(record.trang_thai)}
                         </div>
                       </CardHeader>
 
                       <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-3">
-                          {record.ngay_tiem && (
-                            <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs text-gray-600">Ngày tiêm</div>
-                                <div className="text-sm font-semibold text-gray-900">
-                                  {record.ngay_tiem}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           {record.lo_vaccine && (
                             <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
                               <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -574,25 +659,17 @@ export const VaccinationHistory = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                            <Activity className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-blue-700">Thứ tự mũi tiêm</div>
-                              <div className="text-sm font-semibold text-blue-900">
-                                Mũi {record.thu_tu_mui_tiem}
+                          {record.thu_tu_hien_thi !== undefined && record.thu_tu_hien_thi !== null && (
+                            <div className="flex items-center gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                              <Activity className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs text-blue-700">Thứ tự hiển thị</div>
+                                <div className="text-sm font-semibold text-blue-900">
+                                  #{record.thu_tu_hien_thi}
+                                </div>
                               </div>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                            <Activity className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-blue-700">Thứ tự hiển thị</div>
-                              <div className="text-sm font-semibold text-blue-900">
-                                {record.thu_tu_hien_thi}
-                              </div>
-                            </div>
-                          </div>
+                          )}
                         </div>
 
                         {record.phan_ung_sau_tiem && (
@@ -608,6 +685,19 @@ export const VaccinationHistory = () => {
                             </div>
                           </div>
                         )}
+
+                        {/* Technical IDs (collapsed, smaller) */}
+                        <div className="pt-2 border-t border-gray-100">
+                          <details className="text-xs text-gray-500">
+                            <summary className="cursor-pointer hover:text-gray-700">
+                              Thông tin kỹ thuật
+                            </summary>
+                            <div className="mt-2 space-y-1 pl-4">
+                              <div>Lịch sử ID: {formatNumber(record.lich_su_tiem_id)}</div>
+                              <div>Đối tượng ID: {formatNumber(record.doi_tuong_id)}</div>
+                            </div>
+                          </details>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
