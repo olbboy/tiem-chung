@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
-import type { ThanhVienDetail, KhangNguyenRecord, VacxinRecord } from '../types';
+import type { ThanhVienDetail, KhangNguyenRecord, VacxinRecord, PhacDoRecord } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -31,7 +31,10 @@ import {
   Home,
   Users,
   Calendar,
-  IdCard
+  IdCard,
+  Clipboard,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 export const VaccinationHistory = () => {
@@ -41,11 +44,13 @@ export const VaccinationHistory = () => {
   const [memberDetail, setMemberDetail] = useState<ThanhVienDetail | null>(null);
   const [khangNguyenRecords, setKhangNguyenRecords] = useState<KhangNguyenRecord[]>([]);
   const [vacxinRecords, setVacxinRecords] = useState<VacxinRecord[]>([]);
+  const [phacDoRecords, setPhacDoRecords] = useState<PhacDoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('personal-info');
   const [selectedVaccine, setSelectedVaccine] = useState<VacxinRecord | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (memberId) {
@@ -68,10 +73,11 @@ export const VaccinationHistory = () => {
 
       const memberIdForDetail = maThanhVien || doiTuongId;
 
-      const [detailResponse, khangNguyenResponse, vacxinResponse] = await Promise.all([
+      const [detailResponse, khangNguyenResponse, vacxinResponse, phacDoResponse] = await Promise.all([
         apiService.getThanhVienDetail(memberIdForDetail),
         apiService.getKhangNguyenHistory(doiTuongId),
-        apiService.getVacxinHistory(doiTuongId)
+        apiService.getVacxinHistory(doiTuongId),
+        apiService.getPhacDoTiemChung(doiTuongId)
       ]);
 
       setMemberDetail(detailResponse);
@@ -83,6 +89,9 @@ export const VaccinationHistory = () => {
       const vacxinData = vacxinResponse.data || vacxinResponse || [];
       const vacxinArray = Array.isArray(vacxinData) ? vacxinData : [vacxinData];
       setVacxinRecords(sortVacxinRecords(vacxinArray));
+
+      const phacDoData = phacDoResponse.data || [];
+      setPhacDoRecords(sortPhacDoRecords(phacDoData));
     } catch (err: any) {
       console.error('[VaccinationHistory] Error:', err);
       setError(err.message || 'Không thể tải thông tin');
@@ -148,6 +157,53 @@ export const VaccinationHistory = () => {
       const doseA = safeParseNumber(a.thu_tu_mui_tiem) ?? 999;
       const doseB = safeParseNumber(b.thu_tu_mui_tiem) ?? 999;
       return doseA - doseB;
+    });
+  };
+
+  const sortPhacDoRecords = (records: PhacDoRecord[]): PhacDoRecord[] => {
+    return [...records].sort((a, b) => {
+      // First sort by khang_nguyen_id
+      if (a.khang_nguyen_id !== b.khang_nguyen_id) {
+        return a.khang_nguyen_id - b.khang_nguyen_id;
+      }
+      // Then by thu_tu within same antibody
+      return a.thu_tu - b.thu_tu;
+    });
+  };
+
+  const formatAgeUnit = (age: number, unit: number): string => {
+    // unit: 3 = months, 2 = years, 1 = days
+    if (unit === 3) {
+      return age === 0 ? 'Khi sinh' : `${age} tháng`;
+    } else if (unit === 2) {
+      return `${age} tuổi`;
+    } else if (unit === 1) {
+      return `${age} ngày`;
+    }
+    return `${age}`;
+  };
+
+  const groupPhacDoByAntibody = (records: PhacDoRecord[]) => {
+    const grouped = new Map<string, PhacDoRecord[]>();
+    records.forEach(record => {
+      const key = record.ten_khang_nguyen;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(record);
+    });
+    return grouped;
+  };
+
+  const toggleScheduleExpanded = (antibodyName: string) => {
+    setExpandedSchedules(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(antibodyName)) {
+        newSet.delete(antibodyName);
+      } else {
+        newSet.add(antibodyName);
+      }
+      return newSet;
     });
   };
 
@@ -277,7 +333,7 @@ export const VaccinationHistory = () => {
         <Card>
           <CardHeader className="border-b">
             <Tabs>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger
                   active={activeTab === 'personal-info'}
                   onClick={() => setActiveTab('personal-info')}
@@ -298,6 +354,13 @@ export const VaccinationHistory = () => {
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Lịch sử
+                </TabsTrigger>
+                <TabsTrigger
+                  active={activeTab === 'schedule'}
+                  onClick={() => setActiveTab('schedule')}
+                >
+                  <Clipboard className="w-4 h-4 mr-2" />
+                  Phác đồ
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -572,6 +635,119 @@ export const VaccinationHistory = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Tab 4: Phac Do (Vaccination Schedule) */}
+            <TabsContent active={activeTab === 'schedule'}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Phác đồ tiêm chủng</h2>
+                  <Badge variant="outline" className="text-sm">
+                    {groupPhacDoByAntibody(phacDoRecords).size} loại
+                  </Badge>
+                </div>
+                {phacDoRecords.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Clipboard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Chưa có phác đồ tiêm chủng</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Array.from(groupPhacDoByAntibody(phacDoRecords)).map(([antibodyName, records]) => {
+                      const isExpanded = expandedSchedules.has(antibodyName);
+                      const totalDoses = records[0]?.tong_so_mui;
+
+                      return (
+                        <div
+                          key={antibodyName}
+                          className="rounded-lg border bg-white overflow-hidden"
+                        >
+                          {/* Header - Clickable */}
+                          <div
+                            onClick={() => toggleScheduleExpanded(antibodyName)}
+                            className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3 flex-1">
+                                <div className="p-2 rounded-lg bg-blue-100">
+                                  <Shield className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-medium text-gray-900 mb-1">{antibodyName}</h3>
+                                  {totalDoses && (
+                                    <div className="text-sm text-gray-600">
+                                      {totalDoses} mũi tiêm
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {records.length} liều
+                                </Badge>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 text-gray-400" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expanded Content */}
+                          {isExpanded && (
+                            <div className="border-t bg-gray-50">
+                              {/* Description */}
+                              {records[0]?.mo_ta && (
+                                <div className="p-4 border-b bg-blue-50/50">
+                                  <div className="text-xs font-medium text-blue-600 mb-2 uppercase tracking-wide">
+                                    Thông tin bệnh
+                                  </div>
+                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                    {records[0].mo_ta}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Dose Schedule */}
+                              <div className="p-4 space-y-2">
+                                <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
+                                  Lịch trình tiêm
+                                </div>
+                                {records.map((dose) => (
+                                  <div
+                                    key={`${dose.phac_do_id}-${dose.thu_tu}`}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-white border"
+                                  >
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold flex-shrink-0">
+                                      {dose.thu_tu}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        Mũi {dose.thu_tu}
+                                        {dose.tong_so_mui && ` / ${dose.tong_so_mui}`}
+                                      </div>
+                                      <div className="text-xs text-gray-600 mt-0.5">
+                                        Độ tuổi: {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">
+                                        <Calendar className="w-3 h-3 mr-1" />
+                                        {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

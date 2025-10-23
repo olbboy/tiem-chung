@@ -127,6 +127,26 @@ export interface VacxinResponse {
   [key: string]: any;
 }
 
+// Phac Do (Vaccination Schedule) Record
+export interface PhacDoRecord {
+  phac_do_id: number;
+  doi_tuong_id: number | null;
+  khang_nguyen_id: number;
+  ten_khang_nguyen: string; // Antibody/disease name
+  thu_tu: number; // Dose order (1, 2, 3, 4)
+  tong_so_mui: number | null; // Total doses (can be null)
+  mo_ta: string | null; // Description (can be null or very long)
+  tuoi_tiem: number; // Age to vaccinate
+  don_vi_tuoi_tiem: number; // Age unit (3 = months)
+  [key: string]: any;
+}
+
+export interface PhacDoResponse {
+  code: number;
+  message: string;
+  data: PhacDoRecord[];
+}
+
 // Legacy type - kept for backward compatibility
 export interface VaccinationRecord {
   ma_tiem: number;

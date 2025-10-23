@@ -7,7 +7,8 @@ import type {
   ThanhVienDetail,
   VaccinationHistoryResponse,
   KhangNguyenResponse,
-  VacxinResponse
+  VacxinResponse,
+  PhacDoResponse
 } from '../types';
 
 const BASE_URL = 'https://api-stc-v2.vncdc.gov.vn';
@@ -302,6 +303,43 @@ class ApiService {
       }
 
       throw new Error(error.message || 'Không thể tải lịch sử vacxin');
+    }
+  }
+
+  // Get Phac Do Tiem Chung (Vaccination Schedule)
+  async getPhacDoTiemChung(doiTuongId: number): Promise<PhacDoResponse> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
+
+      const api = createApiInstance(token);
+      console.log('[API] Fetching phac do tiem chung for doi_tuong_id:', doiTuongId);
+
+      const response = await api.get(
+        `/phac_do_tiem_chung?doi_tuong_id=${doiTuongId}`
+      );
+      console.log('[API] Phac do response:', response.data);
+
+      // Handle response structure
+      if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data;
+      } else if (Array.isArray(response.data)) {
+        return { code: 1, message: 'Thành công', data: response.data };
+      } else {
+        console.warn('[API] Unexpected phac do response structure:', response.data);
+        return { code: 0, message: 'Không có dữ liệu', data: [] };
+      }
+    } catch (error: any) {
+      console.error('[API] Get phac do tiem chung error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải phác đồ tiêm chủng');
     }
   }
 }
