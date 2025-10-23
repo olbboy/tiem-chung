@@ -5,7 +5,9 @@ import type {
   LoginResponse,
   ThanhVienResponse,
   ThanhVienDetail,
-  VaccinationHistoryResponse
+  VaccinationHistoryResponse,
+  KhangNguyenResponse,
+  VacxinResponse
 } from '../types';
 
 const BASE_URL = 'https://api-stc-v2.vncdc.gov.vn';
@@ -235,6 +237,80 @@ class ApiService {
       }
 
       throw new Error(error.message || 'Không thể tải lịch sử tiêm chủng');
+    }
+  }
+
+  // Get Khang Nguyen (Disease/Antibody) History
+  async getKhangNguyenHistory(doiTuongId: number): Promise<KhangNguyenResponse> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
+
+      const api = createApiInstance(token);
+      console.log('[API] Fetching khang nguyen history for doi_tuong_id:', doiTuongId);
+
+      const response = await api.get(
+        `/lich_su_tiem/khang_nguyen?doi_tuong_id=${doiTuongId}`
+      );
+      console.log('[API] Khang nguyen response:', response.data);
+
+      // Handle both array and object responses
+      if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data;
+      } else {
+        console.warn('[API] Unexpected khang nguyen response structure:', response.data);
+        return { data: [] };
+      }
+    } catch (error: any) {
+      console.error('[API] Get khang nguyen history error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải lịch sử kháng nguyên');
+    }
+  }
+
+  // Get Vacxin (Vaccine) History
+  async getVacxinHistory(doiTuongId: number): Promise<VacxinResponse> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập lại');
+      }
+
+      const api = createApiInstance(token);
+      console.log('[API] Fetching vacxin history for doi_tuong_id:', doiTuongId);
+
+      const response = await api.get(
+        `/lich_su_tiem/vacxin?doi_tuong_id=${doiTuongId}`
+      );
+      console.log('[API] Vacxin response:', response.data);
+
+      // Handle both array and object responses
+      if (Array.isArray(response.data)) {
+        return { data: response.data };
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data;
+      } else {
+        console.warn('[API] Unexpected vacxin response structure:', response.data);
+        return { data: [] };
+      }
+    } catch (error: any) {
+      console.error('[API] Get vacxin history error:', error);
+
+      if (error.response?.status === 401) {
+        this.clearToken();
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+
+      throw new Error(error.message || 'Không thể tải lịch sử vacxin');
     }
   }
 }
