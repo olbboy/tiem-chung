@@ -1,6 +1,0 @@
-name = "tiem-chung"
-compatibility_date = "2025-10-23"
-pages_build_output_dir = "dist"
-
-[assets]
-directory = "dist"

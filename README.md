@@ -92,33 +92,29 @@ The project uses TypeScript for type safety and includes:
 
 ## Deployment to Cloudflare Pages
 
-### Option 1: Using Cloudflare Pages Dashboard
+### Quick Setup (Recommended)
 
 1. Connect your GitHub repository to Cloudflare Pages
-2. Set the following build settings:
+2. Configure build settings:
    - **Build command**: `npm run build`
    - **Build output directory**: `dist`
-   - **Root directory**: `/` (leave empty)
+   - **Deploy command**: **LEAVE EMPTY** (very important!)
+   - **Root directory**: Leave empty
 3. Click "Save and Deploy"
 
-### Option 2: Using Wrangler CLI
+**⚠️ IMPORTANT**: Do NOT set a deploy command. Cloudflare Pages automatically deploys after the build completes.
 
-```bash
-# Install wrangler globally (optional)
-npm install -g wrangler
+### Troubleshooting
 
-# Build the project
-npm run build
+If you see error: `It looks like you've run a Workers-specific command in a Pages project`
+- Go to Settings → Builds & deployments
+- Remove/clear the "Deploy command" field
+- Retry deployment
 
-# Deploy to Cloudflare Pages
-npm run deploy
-# or
-wrangler pages deploy dist
-```
+For detailed deployment guide, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ### Important Configuration Files
 
-- `wrangler.toml` - Cloudflare Pages configuration
 - `public/_redirects` - Handles SPA routing (redirects all routes to index.html)
 
 The `_redirects` file ensures that client-side routing works correctly on Cloudflare Pages.
