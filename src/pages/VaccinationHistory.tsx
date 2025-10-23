@@ -167,6 +167,37 @@ export const VaccinationHistory = () => {
     return dateStr; // Return original string if can't parse
   };
 
+  // Format reaction object to readable string
+  const formatReaction = (reaction: any): string | null => {
+    if (!reaction) return null;
+
+    // If it's already a string, return it
+    if (typeof reaction === 'string') {
+      return reaction;
+    }
+
+    // If it's an object, format it properly
+    if (typeof reaction === 'object') {
+      const parts: string[] = [];
+
+      if (reaction.loai_phan_ung) {
+        parts.push(`Loại: ${reaction.loai_phan_ung}`);
+      }
+
+      if (reaction.ket_qua) {
+        parts.push(`Kết quả: ${reaction.ket_qua}`);
+      }
+
+      if (reaction.ngay_phan_ung) {
+        parts.push(`Ngày: ${formatDate(reaction.ngay_phan_ung)}`);
+      }
+
+      return parts.length > 0 ? parts.join(' • ') : null;
+    }
+
+    return null;
+  };
+
   // Sort records by date (newest first)
   const sortByDate = (records: KhangNguyenRecord[]): KhangNguyenRecord[] => {
     return [...records].sort((a, b) => {
@@ -672,7 +703,7 @@ export const VaccinationHistory = () => {
                           )}
                         </div>
 
-                        {record.phan_ung_sau_tiem && (
+                        {formatReaction(record.phan_ung_sau_tiem) && (
                           <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 p-4 rounded-lg">
                             <Activity className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
@@ -680,7 +711,7 @@ export const VaccinationHistory = () => {
                                 Phản ứng sau tiêm
                               </div>
                               <p className="text-sm text-amber-800">
-                                {record.phan_ung_sau_tiem}
+                                {formatReaction(record.phan_ung_sau_tiem)}
                               </p>
                             </div>
                           </div>
