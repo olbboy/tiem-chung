@@ -90,6 +90,39 @@ The project uses TypeScript for type safety and includes:
 - Authentication context for state management
 - Axios service layer with automatic token handling
 
+## Deployment to Cloudflare Pages
+
+### Option 1: Using Cloudflare Pages Dashboard
+
+1. Connect your GitHub repository to Cloudflare Pages
+2. Set the following build settings:
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist`
+   - **Root directory**: `/` (leave empty)
+3. Click "Save and Deploy"
+
+### Option 2: Using Wrangler CLI
+
+```bash
+# Install wrangler globally (optional)
+npm install -g wrangler
+
+# Build the project
+npm run build
+
+# Deploy to Cloudflare Pages
+npm run deploy
+# or
+wrangler pages deploy dist
+```
+
+### Important Configuration Files
+
+- `wrangler.toml` - Cloudflare Pages configuration
+- `public/_redirects` - Handles SPA routing (redirects all routes to index.html)
+
+The `_redirects` file ensures that client-side routing works correctly on Cloudflare Pages.
+
 ## License
 
 This project is for educational and demonstration purposes.
