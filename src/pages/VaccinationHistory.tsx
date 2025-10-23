@@ -9,6 +9,13 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '../components/ui/dialog';
+import {
   UserCircle,
   Calendar,
   Phone,
@@ -24,7 +31,9 @@ import {
   Activity,
   Shield,
   XCircle,
-  Clock
+  Clock,
+  FileText,
+  Info
 } from 'lucide-react';
 
 export const VaccinationHistory = () => {
@@ -36,7 +45,9 @@ export const VaccinationHistory = () => {
   const [vacxinRecords, setVacxinRecords] = useState<VacxinRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('khang-nguyen');
+  const [activeTab, setActiveTab] = useState('personal-info');
+  const [selectedVaccine, setSelectedVaccine] = useState<VacxinRecord | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (memberId) {
@@ -106,6 +117,11 @@ export const VaccinationHistory = () => {
     navigate('/personal-info');
   };
 
+  const handleVaccineClick = (record: VacxinRecord) => {
+    setSelectedVaccine(record);
+    setIsDialogOpen(true);
+  };
+
   const shouldShowField = (key: string): boolean => {
     const hiddenFields = [
       'ma_thanh_vien', 'doi_tuong_id', 'ho_va_ten', 'gioi_tinh',
@@ -131,13 +147,12 @@ export const VaccinationHistory = () => {
     return Math.floor(num); // Convert float to integer
   };
 
-  // Safe number formatting with thousand separators
-  const formatNumber = (value: any): string => {
-    const num = safeParseNumber(value);
-    if (num === null) return 'N/A';
-
-    return num.toLocaleString('vi-VN');
-  };
+  // Safe number formatting with thousand separators (kept for future use)
+  // const formatNumber = (value: any): string => {
+  //   const num = safeParseNumber(value);
+  //   if (num === null) return 'N/A';
+  //   return num.toLocaleString('vi-VN');
+  // };
 
   // Parse Vietnamese date format "10:12 02/11/2022" or return as-is
   const formatDate = (dateStr: string): string => {
@@ -306,18 +321,6 @@ export const VaccinationHistory = () => {
               <Skeleton className="h-4 w-3/4" />
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-10 w-full max-w-md mb-4" />
-              <Skeleton className="h-6 w-64" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-40 w-full" />
-              ))}
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
@@ -354,7 +357,7 @@ export const VaccinationHistory = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Button
             onClick={handleBack}
@@ -371,386 +374,470 @@ export const VaccinationHistory = () => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Lịch Sử Tiêm Chủng
+                {memberDetail?.ho_va_ten || 'Hồ Sơ Tiêm Chủng'}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Hồ sơ tiêm chủng chi tiết
+                Thông tin chi tiết và lịch sử tiêm chủng
               </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Member Information Card */}
-        {memberDetail && (
-          <Card className="overflow-hidden border-2">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-2 rounded-lg shadow-sm">
-                  <UserCircle className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">Thông tin thành viên</CardTitle>
-                  <p className="text-sm text-gray-600 mt-0.5">
-                    Hồ sơ cá nhân và thông tin liên hệ
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <UserCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-600 mb-0.5">Họ và tên</div>
-                    <div className="font-semibold text-gray-900">{memberDetail.ho_va_ten}</div>
-                  </div>
-                </div>
-
-                {memberDetail.ngay_sinh && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-600 mb-0.5">Ngày sinh</div>
-                      <div className="font-semibold text-gray-900">
-                        {new Date(memberDetail.ngay_sinh).toLocaleDateString('vi-VN')}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-600 mb-0.5">Giới tính</div>
-                    <div className="font-semibold text-gray-900">{memberDetail.gioi_tinh}</div>
-                  </div>
-                </div>
-
-                {memberDetail.so_dien_thoai && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-600 mb-0.5">Điện thoại</div>
-                      <div className="font-semibold text-gray-900">{memberDetail.so_dien_thoai}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {(memberDetail.dia_chi || memberDetail.email) && (
-                <div className="space-y-3 pt-4 border-t border-gray-100">
-                  {memberDetail.dia_chi && (
-                    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                      <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-600 mb-0.5">Địa chỉ</div>
-                        <div className="font-semibold text-gray-900">{memberDetail.dia_chi}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {memberDetail.email && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-600 mb-0.5">Email</div>
-                        <div className="font-semibold text-gray-900">{memberDetail.email}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {Object.entries(memberDetail).filter(([key]) => shouldShowField(key)).length > 0 && (
-                <div className="grid md:grid-cols-2 gap-3 pt-4 border-t border-gray-100 mt-4">
-                  {Object.entries(memberDetail)
-                    .filter(([key]) => shouldShowField(key))
-                    .slice(0, 4)
-                    .map(([key, value]) => {
-                      const fieldLabels: Record<string, string> = {
-                        'cmnd': 'CMND',
-                        'cccd': 'CCCD',
-                        'dan_toc': 'Dân tộc',
-                        'nghe_nghiep': 'Nghề nghiệp',
-                      };
-
-                      const label = fieldLabels[key] || key.split('_')
-                        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(' ');
-
-                      return (
-                        <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <IdCard className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs text-gray-600 mb-0.5">{label}</div>
-                            <div className="font-semibold text-gray-900">{String(value)}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Vaccination History with Tabs */}
-        <Card className="overflow-hidden border-2">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-white p-2 rounded-lg shadow-sm">
-                <Shield className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">
-                  Lịch sử tiêm chủng
-                </CardTitle>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  Xem theo kháng nguyên hoặc vaccine
-                </p>
-              </div>
-            </div>
-
-            {/* Tabs */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Tabs Card */}
+        <Card className="overflow-hidden border-2 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 pb-6">
             <Tabs>
-              <TabsList className="w-full sm:w-auto">
+              <TabsList className="w-full grid grid-cols-3 gap-2">
                 <TabsTrigger
-                  active={activeTab === 'khang-nguyen'}
-                  onClick={() => setActiveTab('khang-nguyen')}
-                  className="flex-1 sm:flex-none"
+                  active={activeTab === 'personal-info'}
+                  onClick={() => setActiveTab('personal-info')}
+                  className="flex items-center justify-center gap-2"
                 >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Kháng nguyên ({khangNguyenRecords.length})
+                  <UserCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline">Thông tin cá nhân</span>
+                  <span className="sm:hidden">Cá nhân</span>
                 </TabsTrigger>
                 <TabsTrigger
-                  active={activeTab === 'vacxin'}
-                  onClick={() => setActiveTab('vacxin')}
-                  className="flex-1 sm:flex-none"
+                  active={activeTab === 'overview'}
+                  onClick={() => setActiveTab('overview')}
+                  className="flex items-center justify-center gap-2"
                 >
-                  <Syringe className="w-4 h-4 mr-2" />
-                  Vaccine ({vacxinRecords.length})
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden sm:inline">Tổng quan</span>
+                  <span className="sm:hidden">Tổng quan</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  active={activeTab === 'history'}
+                  onClick={() => setActiveTab('history')}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Lịch sử tiêm</span>
+                  <span className="sm:hidden">Lịch sử</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
 
           <CardContent className="pt-6">
-            {/* Khang Nguyen Tab Content */}
-            <TabsContent active={activeTab === 'khang-nguyen'}>
-              {khangNguyenRecords.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                    <Shield className="w-10 h-10 text-gray-400" />
+            {/* Tab 1: Personal Info */}
+            <TabsContent active={activeTab === 'personal-info'}>
+              {memberDetail ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <UserCircle className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Thông tin cá nhân</h2>
+                      <p className="text-sm text-gray-600">Hồ sơ và thông tin liên hệ</p>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Chưa có lịch sử kháng nguyên
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Thành viên này chưa có bản ghi tiêm kháng nguyên nào trong hệ thống.
-                  </p>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                      <UserCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-blue-700 mb-0.5 font-medium">Họ và tên</div>
+                        <div className="font-semibold text-gray-900">{memberDetail.ho_va_ten || 'N/A'}</div>
+                      </div>
+                    </div>
+
+                    {memberDetail.ngay_sinh && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <Calendar className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-600 mb-0.5 font-medium">Ngày sinh</div>
+                          <div className="font-semibold text-gray-900">{memberDetail.ngay_sinh}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <User className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-0.5 font-medium">Giới tính</div>
+                        <div className="font-semibold text-gray-900">
+                          {String(memberDetail.gioi_tinh) === '0' ? 'Nữ' : String(memberDetail.gioi_tinh) === '1' ? 'Nam' : 'Khác'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {memberDetail.so_dien_thoai && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <Phone className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-600 mb-0.5 font-medium">Điện thoại</div>
+                          <div className="font-semibold text-gray-900">{memberDetail.so_dien_thoai}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {memberDetail.email && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 md:col-span-2">
+                        <Mail className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-600 mb-0.5 font-medium">Email</div>
+                          <div className="font-semibold text-gray-900">{memberDetail.email}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {memberDetail.dia_chi && (
+                      <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 md:col-span-2">
+                        <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-600 mb-0.5 font-medium">Địa chỉ</div>
+                          <div className="font-semibold text-gray-900">{memberDetail.dia_chi}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {Object.entries(memberDetail).filter(([key]) => shouldShowField(key)).length > 0 && (
+                    <div className="pt-6 border-t border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Thông tin bổ sung</h3>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {Object.entries(memberDetail)
+                          .filter(([key]) => shouldShowField(key))
+                          .map(([key, value]) => {
+                            const fieldLabels: Record<string, string> = {
+                              'cmnd': 'CMND',
+                              'cccd': 'CCCD',
+                              'dan_toc': 'Dân tộc',
+                              'nghe_nghiep': 'Nghề nghiệp',
+                            };
+
+                            const label = fieldLabels[key] || key.split('_')
+                              .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                              .join(' ');
+
+                            return (
+                              <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <IdCard className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-gray-600 mb-0.5">{label}</div>
+                                  <div className="text-sm font-semibold text-gray-900">{String(value)}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {khangNguyenRecords.map((record, index) => (
-                    <Card
-                      key={`khang-nguyen-${record.lich_su_tiem_id}-${record.khang_nguyen_id}-${index}`}
-                      className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow"
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex justify-between items-start flex-wrap gap-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="bg-blue-100 p-3 rounded-lg">
-                              <Shield className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-lg text-blue-700 leading-tight">
-                                {record.ten_khang_nguyen || 'Chưa rõ tên'}
-                              </CardTitle>
-                              {record.ngay_tiem && (
-                                <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-600">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>{formatDate(record.ngay_tiem)}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {getStatusBadge(record.trang_thai)}
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="space-y-3">
-                        <div className="grid md:grid-cols-3 gap-3 text-xs text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <IdCard className="w-3 h-3 flex-shrink-0" />
-                            <span>ID: {formatNumber(record.lich_su_tiem_id)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-3 h-3 flex-shrink-0" />
-                            <span>KN: {formatNumber(record.khang_nguyen_id)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <User className="w-3 h-3 flex-shrink-0" />
-                            <span>ĐT: {formatNumber(record.doi_tuong_id)}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="text-center py-12">
+                  <Info className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">Không có thông tin cá nhân</p>
                 </div>
               )}
             </TabsContent>
 
-            {/* Vacxin Tab Content */}
-            <TabsContent active={activeTab === 'vacxin'}>
-              {vacxinRecords.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                    <Syringe className="w-10 h-10 text-gray-400" />
+            {/* Tab 2: Overview (Khang Nguyen) */}
+            <TabsContent active={activeTab === 'overview'}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <Shield className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Tổng quan kháng nguyên</h2>
+                      <p className="text-sm text-gray-600">Danh sách các mũi tiêm kháng nguyên</p>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Chưa có lịch sử vaccine
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Thành viên này chưa có bản ghi tiêm vaccine nào trong hệ thống.
-                  </p>
+                  <Badge variant="outline" className="text-lg px-4 py-2">
+                    {khangNguyenRecords.length} mũi
+                  </Badge>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {vacxinRecords.map((record, index) => (
-                    <Card
-                      key={`vacxin-${record.lich_su_tiem_id}-${record.thu_tu_mui_tiem}-${index}`}
-                      className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow"
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex justify-between items-start flex-wrap gap-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="bg-green-100 p-3 rounded-lg">
-                              <Syringe className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-lg text-green-700 leading-tight">
-                                {record.ten_vaccine || 'Chưa rõ tên vaccine'}
-                              </CardTitle>
-                              <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-600">
-                                {record.thu_tu_mui_tiem !== undefined && record.thu_tu_mui_tiem !== null && (
-                                  <Badge variant="outline" className="text-xs">
-                                    Mũi {record.thu_tu_mui_tiem}
-                                  </Badge>
-                                )}
+
+                {khangNguyenRecords.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                      <Shield className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Chưa có lịch sử kháng nguyên
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Thành viên này chưa có bản ghi tiêm kháng nguyên nào trong hệ thống.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {khangNguyenRecords.map((record, index) => (
+                      <Card
+                        key={`khang-nguyen-${record.lich_su_tiem_id}-${record.khang_nguyen_id}-${index}`}
+                        className="border-l-4 border-l-blue-500 hover:shadow-lg transition-all"
+                      >
+                        <CardContent className="p-5">
+                          <div className="flex justify-between items-start flex-wrap gap-4">
+                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                              <div className="bg-blue-100 p-3 rounded-lg">
+                                <Shield className="w-6 h-6 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-bold text-blue-700 mb-2">
+                                  {record.ten_khang_nguyen || 'Chưa rõ tên'}
+                                </h3>
                                 {record.ngay_tiem && (
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {formatDate(record.ngay_tiem)}
-                                  </span>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{formatDate(record.ngay_tiem)}</span>
+                                  </div>
                                 )}
                               </div>
+                            </div>
+                            <div>
+                              {getStatusBadge(record.trang_thai)}
                             </div>
                           </div>
-                          {getStatusBadge(record.trang_thai)}
-                        </div>
-                      </CardHeader>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-                      <CardContent className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {record.lo_vaccine && (
-                            <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                              <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            {/* Tab 3: History (Vacxin with Dialog) */}
+            <TabsContent active={activeTab === 'history'}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <Syringe className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Lịch sử tiêm chi tiết</h2>
+                      <p className="text-sm text-gray-600">Nhấn vào để xem thông tin đầy đủ</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-lg px-4 py-2">
+                    {vacxinRecords.length} mũi
+                  </Badge>
+                </div>
+
+                {vacxinRecords.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                      <Syringe className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Chưa có lịch sử vaccine
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Thành viên này chưa có bản ghi tiêm vaccine nào trong hệ thống.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {vacxinRecords.map((record, index) => (
+                      <Card
+                        key={`vacxin-${record.lich_su_tiem_id}-${record.thu_tu_mui_tiem}-${index}`}
+                        className="border-l-4 border-l-green-500 hover:shadow-lg transition-all cursor-pointer group"
+                        onClick={() => handleVaccineClick(record)}
+                      >
+                        <CardContent className="p-5">
+                          <div className="flex justify-between items-start flex-wrap gap-4">
+                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                              <div className="bg-green-100 p-3 rounded-lg group-hover:bg-green-200 transition-colors">
+                                <Syringe className="w-6 h-6 text-green-600" />
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-xs text-gray-600">Lô vaccine</div>
-                                <div className="text-sm font-semibold text-gray-900">
-                                  {record.lo_vaccine}
+                                <h3 className="text-lg font-bold text-green-700 mb-2 group-hover:text-green-800 transition-colors">
+                                  {record.ten_vaccine || 'Chưa rõ tên vaccine'}
+                                </h3>
+                                <div className="space-y-1.5 text-sm text-gray-600">
+                                  {getStatusBadge(record.trang_thai)}
+                                  {record.noi_tiem && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Building className="w-4 h-4" />
+                                      <span>tại {record.noi_tiem}</span>
+                                    </div>
+                                  )}
+                                  {record.ngay_tiem && (
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-4 h-4" />
+                                      <span>lúc {formatDate(record.ngay_tiem)}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                          )}
-
-                          {record.noi_tiem && (
-                            <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                              <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs text-gray-600">Nơi tiêm</div>
-                                <div className="text-sm font-semibold text-gray-900">
-                                  {record.noi_tiem}
-                                </div>
-                              </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                              <Info className="w-4 h-4" />
+                              <span>Chi tiết</span>
                             </div>
-                          )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </main>
 
-                          {record.nguoi_tiem && (
-                            <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                              <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs text-gray-600">Người tiêm</div>
-                                <div className="text-sm font-semibold text-gray-900">
-                                  {record.nguoi_tiem}
-                                </div>
-                              </div>
-                            </div>
-                          )}
+      {/* Detail Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {selectedVaccine && (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-3 pr-8">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Syringe className="w-5 h-5 text-green-600" />
+                </div>
+                Thông tin mũi tiêm
+              </DialogTitle>
+              <DialogClose onClick={() => setIsDialogOpen(false)} />
+            </DialogHeader>
 
-                          {record.thu_tu_hien_thi !== undefined && record.thu_tu_hien_thi !== null && (
-                            <div className="flex items-center gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                              <Activity className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs text-blue-700">Thứ tự hiển thị</div>
-                                <div className="text-sm font-semibold text-blue-900">
-                                  #{record.thu_tu_hien_thi}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+            <div className="mt-4 space-y-6">
+              {/* Vaccine Info Section */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-blue-600" />
+                  Thông tin vắc xin
+                </h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                    <div className="col-span-1 text-xs font-medium text-gray-600">Vắc xin</div>
+                    <div className="col-span-2 text-sm font-semibold text-gray-900">
+                      {selectedVaccine.ten_vaccine || 'N/A'}
+                    </div>
+                  </div>
 
-                        {formatReaction(record.phan_ung_sau_tiem) && (
-                          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                            <Activity className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-amber-900 mb-1">
-                                Phản ứng sau tiêm
-                              </div>
-                              <p className="text-sm text-amber-800">
-                                {formatReaction(record.phan_ung_sau_tiem)}
-                              </p>
+                  {selectedVaccine.ten_khang_nguyen && (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="col-span-1 text-xs font-medium text-gray-600">Kháng nguyên</div>
+                      <div className="col-span-2 text-sm font-semibold text-gray-900">
+                        {selectedVaccine.ten_khang_nguyen}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.ngay_tiem && (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="col-span-1 text-xs font-medium text-gray-600">Ngày tiêm</div>
+                      <div className="col-span-2 text-sm font-semibold text-gray-900">
+                        {formatDate(selectedVaccine.ngay_tiem)}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.lo_vaccine && (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="col-span-1 text-xs font-medium text-gray-600">Lô vắc xin</div>
+                      <div className="col-span-2 text-sm font-semibold text-gray-900">
+                        {selectedVaccine.lo_vaccine}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.trang_thai !== undefined && selectedVaccine.trang_thai !== null && (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="col-span-1 text-xs font-medium text-gray-600">Trạng thái</div>
+                      <div className="col-span-2">
+                        {getStatusBadge(selectedVaccine.trang_thai)}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedVaccine.noi_tiem && (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="col-span-1 text-xs font-medium text-gray-600">Cơ sở tiêm chủng</div>
+                      <div className="col-span-2 text-sm font-semibold text-gray-900">
+                        {selectedVaccine.noi_tiem}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Reaction Info Section */}
+              {selectedVaccine.phan_ung_sau_tiem && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-amber-600" />
+                    Phản ứng sau tiêm
+                  </h3>
+                  <div className="space-y-3">
+                    {typeof selectedVaccine.phan_ung_sau_tiem === 'object' && selectedVaccine.phan_ung_sau_tiem !== null ? (
+                      <>
+                        {(selectedVaccine.phan_ung_sau_tiem as any).loai_phan_ung && (
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                            <div className="col-span-1 text-xs font-medium text-amber-700">Mức độ phản ứng</div>
+                            <div className="col-span-2 text-sm font-semibold text-amber-900">
+                              {(selectedVaccine.phan_ung_sau_tiem as any).loai_phan_ung}
                             </div>
                           </div>
                         )}
 
-                        {/* Technical IDs (collapsed, smaller) */}
-                        <div className="pt-2 border-t border-gray-100">
-                          <details className="text-xs text-gray-500">
-                            <summary className="cursor-pointer hover:text-gray-700">
-                              Thông tin kỹ thuật
-                            </summary>
-                            <div className="mt-2 space-y-1 pl-4">
-                              <div>Lịch sử ID: {formatNumber(record.lich_su_tiem_id)}</div>
-                              <div>Đối tượng ID: {formatNumber(record.doi_tuong_id)}</div>
+                        {(selectedVaccine.phan_ung_sau_tiem as any).ngay_phan_ung && (
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                            <div className="col-span-1 text-xs font-medium text-amber-700">Thời gian phản ứng</div>
+                            <div className="col-span-2 text-sm font-semibold text-amber-900">
+                              {formatDate((selectedVaccine.phan_ung_sau_tiem as any).ngay_phan_ung)}
                             </div>
-                          </details>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          </div>
+                        )}
+
+                        {(selectedVaccine.phan_ung_sau_tiem as any).ket_qua && (
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                            <div className="col-span-1 text-xs font-medium text-amber-700">Kết quả</div>
+                            <div className="col-span-2 text-sm font-semibold text-amber-900">
+                              {(selectedVaccine.phan_ung_sau_tiem as any).ket_qua}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="p-3 bg-amber-50 rounded-lg border border-amber-100">
+                        <p className="text-sm text-amber-900">{formatReaction(selectedVaccine.phan_ung_sau_tiem)}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-            </TabsContent>
-          </CardContent>
-        </Card>
 
-        {/* Back Button */}
-        <div className="flex justify-center pt-4">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            size="lg"
-            className="shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Quay lại danh sách thành viên
-          </Button>
-        </div>
-      </main>
+              {/* Additional Info */}
+              {(selectedVaccine.nguoi_tiem || selectedVaccine.thu_tu_mui_tiem !== undefined) && (
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                    {selectedVaccine.nguoi_tiem && (
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <User className="w-3 h-3" />
+                        <span>Người tiêm: {selectedVaccine.nguoi_tiem}</span>
+                      </div>
+                    )}
+                    {selectedVaccine.thu_tu_mui_tiem !== undefined && selectedVaccine.thu_tu_mui_tiem !== null && (
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <Syringe className="w-3 h-3" />
+                        <span>Mũi thứ: {selectedVaccine.thu_tu_mui_tiem}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <Button
+                onClick={() => setIsDialogOpen(false)}
+                className="w-full"
+              >
+                Đóng
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 };
