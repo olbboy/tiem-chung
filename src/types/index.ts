@@ -17,6 +17,7 @@ export interface LoginResponse {
 
 export interface ThanhVien {
   ma_thanh_vien: number;
+  doi_tuong_id: number; // ID for vaccination history API
   ho_va_ten: string;
   ngay_sinh: string;
   gioi_tinh: string;
