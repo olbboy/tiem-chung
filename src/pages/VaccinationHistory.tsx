@@ -524,7 +524,7 @@ export const VaccinationHistory = () => {
                 <div className="space-y-4">
                   {khangNguyenRecords.map((record, index) => (
                     <Card
-                      key={record.lich_su_tiem_id || index}
+                      key={`khang-nguyen-${record.lich_su_tiem_id}-${record.khang_nguyen_id}-${index}`}
                       className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow"
                     >
                       <CardHeader className="pb-4">
@@ -589,7 +589,7 @@ export const VaccinationHistory = () => {
                 <div className="space-y-4">
                   {vacxinRecords.map((record, index) => (
                     <Card
-                      key={record.lich_su_tiem_id || index}
+                      key={`vacxin-${record.lich_su_tiem_id}-${record.thu_tu_mui_tiem}-${index}`}
                       className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow"
                     >
                       <CardHeader className="pb-4">

@@ -19,16 +19,7 @@ const createApiInstance = (token?: string): AxiosInstance => {
     headers: {
       'accept': 'application/json, text/plain, */*',
       'accept-language': 'vi',
-      'content-type': 'application/json;charset=UTF-8',
-      'origin': 'https://sotiemchung.vncdc.gov.vn',
-      'referer': 'https://sotiemchung.vncdc.gov.vn/',
-      'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"macOS"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-site',
-      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+      'content-type': 'application/json;charset=UTF-8'
     }
   };
 
