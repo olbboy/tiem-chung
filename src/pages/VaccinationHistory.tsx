@@ -135,6 +135,16 @@ export const VaccinationHistory = () => {
     return dateStr;
   };
 
+  const formatDateShort = (dateStr: string): string => {
+    if (!dateStr || typeof dateStr !== 'string') return 'N/A';
+    // Extract just the date part from "HH:MM DD/MM/YYYY" format
+    const match = dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/);
+    if (match) {
+      return match[0];
+    }
+    return dateStr;
+  };
+
   const sortByDate = (records: KhangNguyenRecord[]): KhangNguyenRecord[] => {
     return [...records].sort((a, b) => {
       if (!a.ngay_tiem) return 1;
@@ -193,6 +203,43 @@ export const VaccinationHistory = () => {
       grouped.get(key)!.push(record);
     });
     return grouped;
+  };
+
+  const groupKhangNguyenByAntigen = (records: KhangNguyenRecord[]) => {
+    // Group by antigen and organize by dose number
+    // Map<antigenKey, Map<doseNumber, record>>
+    const grouped = new Map<string, Map<number, KhangNguyenRecord>>();
+    
+    records.forEach(record => {
+      // Create unique key using khang_nguyen_id to handle antigens with same name
+      const antigenKey = `${record.khang_nguyen_id}-${record.ten_khang_nguyen}`;
+      
+      if (!grouped.has(antigenKey)) {
+        grouped.set(antigenKey, new Map<number, KhangNguyenRecord>());
+      }
+      
+      const doseMap = grouped.get(antigenKey)!;
+      const doseNumber = safeParseNumber(record.thu_tu_mui_tiem) ?? 1;
+      
+      // Keep the most recent record for each dose (in case of duplicates)
+      if (!doseMap.has(doseNumber) || 
+          (record.lich_su_tiem_id && doseMap.get(doseNumber)?.lich_su_tiem_id)) {
+        doseMap.set(doseNumber, record);
+      }
+    });
+    
+    // Sort by thu_tu_hien_thi (display order)
+    const sortedGrouped = new Map(
+      Array.from(grouped.entries()).sort((a, b) => {
+        const recordA = Array.from(a[1].values())[0];
+        const recordB = Array.from(b[1].values())[0];
+        const orderA = safeParseNumber(recordA.thu_tu_hien_thi) ?? 999;
+        const orderB = safeParseNumber(recordB.thu_tu_hien_thi) ?? 999;
+        return orderA - orderB;
+      })
+    );
+    
+    return sortedGrouped;
   };
 
   const toggleScheduleExpanded = (antibodyName: string) => {
@@ -548,7 +595,7 @@ export const VaccinationHistory = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Tổng quan kháng nguyên</h2>
                   <Badge variant="outline" className="text-sm">
-                    {khangNguyenRecords.length} mũi
+                    {groupKhangNguyenByAntigen(khangNguyenRecords).size} loại
                   </Badge>
                 </div>
                 {khangNguyenRecords.length === 0 ? (
@@ -557,30 +604,63 @@ export const VaccinationHistory = () => {
                     <p className="text-sm text-gray-500">Chưa có lịch sử kháng nguyên</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {khangNguyenRecords.map((record, index) => (
-                      <div
-                        key={`khang-nguyen-${record.lich_su_tiem_id}-${record.khang_nguyen_id}-${index}`}
-                        className="flex items-start justify-between p-4 rounded-lg border bg-white hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className="p-2 rounded-lg bg-blue-100">
-                            <Shield className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900">
-                              {record.ten_khang_nguyen || 'Chưa rõ'}
-                            </div>
-                            {record.ngay_tiem && (
-                              <div className="text-sm text-gray-500 mt-1">
-                                {formatDate(record.ngay_tiem)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {getStatusBadge(record.trang_thai)}
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-gray-200">
+                          <th className="text-left p-3 bg-gray-50 font-semibold text-sm text-gray-700 sticky left-0 z-10">
+                            Kháng nguyên
+                          </th>
+                          {[1, 2, 3, 4, 5].map(doseNum => (
+                            <th key={doseNum} className="text-center p-3 bg-gray-50 font-semibold text-sm text-gray-700 min-w-[140px]">
+                              {doseNum}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from(groupKhangNguyenByAntigen(khangNguyenRecords)).map(([antigenKey, doseMap]) => {
+                          const firstRecord = Array.from(doseMap.values())[0];
+                          const antigenName = firstRecord.ten_khang_nguyen;
+                          
+                          return (
+                            <tr key={antigenKey} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                              <td className="p-3 font-medium text-gray-900 text-sm sticky left-0 bg-white">
+                                {antigenName}
+                              </td>
+                              {[1, 2, 3, 4, 5].map(doseNum => {
+                                const record = doseMap.get(doseNum);
+                                
+                                if (!record) {
+                                  return <td key={doseNum} className="p-3 text-center"></td>;
+                                }
+                                
+                                return (
+                                  <td key={doseNum} className="p-3">
+                                    <div className={`rounded-lg p-2.5 text-center transition-all ${
+                                      record.trang_thai === 2 
+                                        ? 'bg-emerald-100 border border-emerald-200' 
+                                        : 'bg-gray-100 border border-gray-200'
+                                    }`}>
+                                      {record.ngay_tiem && (
+                                        <div className="text-xs font-medium text-gray-700 mb-1">
+                                          {formatDateShort(record.ngay_tiem)}
+                                        </div>
+                                      )}
+                                      <div className={`text-xs font-semibold ${
+                                        record.trang_thai === 2 ? 'text-emerald-700' : 'text-gray-600'
+                                      }`}>
+                                        {record.trang_thai === 2 ? 'Đã tiêm' : 'Chưa tiêm'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>

@@ -84,12 +84,14 @@ export interface ThanhVienDetail extends ThanhVien {
 
 // Khang Nguyen (Disease/Antibody) Record
 export interface KhangNguyenRecord {
-  lich_su_tiem_id: number;
+  lich_su_tiem_id: number | null;
   khang_nguyen_id: number;
   doi_tuong_id: number;
   ten_khang_nguyen: string; // Disease name
   trang_thai: number; // 2 = vaccinated, 1 = not vaccinated
-  ngay_tiem: string; // Format: "10:12 02/11/2022"
+  ngay_tiem: string | null; // Format: "10:12 02/11/2022"
+  thu_tu_mui_tiem: number; // Dose number (1, 2, 3, 4, 5...)
+  thu_tu_hien_thi: number; // Display order for grouping antigens
   [key: string]: any;
 }
 
