@@ -8,7 +8,12 @@ import type {
   VaccinationHistoryResponse,
   KhangNguyenResponse,
   VacxinResponse,
-  PhacDoResponse
+  PhacDoResponse,
+  RecoverPasswordResponse,
+  ActivateOtpRequest,
+  ActivateOtpResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse
 } from '../types';
 
 const BASE_URL = 'https://api-stc-v2.vncdc.gov.vn';
@@ -340,6 +345,105 @@ class ApiService {
       }
 
       throw new Error(error.message || 'Không thể tải phác đồ tiêm chủng');
+    }
+  }
+
+  // Change Password Flow - Step 1: Request OTP
+  async recoverPasswordBySms(phoneNumber: string): Promise<RecoverPasswordResponse> {
+    try {
+      const api = createApiInstance();
+      console.log('[API] Requesting OTP for phone:', phoneNumber);
+
+      const response = await api.post(`/recover_pass_by_sms?phoneNumber=${phoneNumber}`);
+      console.log('[API] OTP request response:', response.data);
+
+      return response.data;
+    } catch (error: any) {
+      console.error('[API] OTP request error:', error);
+
+      if (error.response) {
+        const message = error.response.data?.message || 'Không thể gửi mã OTP';
+        throw new Error(message);
+      } else if (error.request) {
+        throw new Error('Không thể kết nối đến server');
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  // Change Password Flow - Step 2: Activate OTP
+  async activateOtp(phoneNumber: string, otp: string): Promise<ActivateOtpResponse> {
+    try {
+      const api = createApiInstance();
+      console.log('[API] Activating OTP for phone:', phoneNumber);
+
+      const requestData: ActivateOtpRequest = {
+        phoneNumber,
+        otp
+      };
+
+      const response = await api.post('/activate', requestData);
+      console.log('[API] OTP activation response:', response.data);
+
+      // Store token temporarily for password change
+      const token = response.data.data?.token;
+      if (token) {
+        this.setToken(token);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('[API] OTP activation error:', error);
+
+      if (error.response) {
+        const message = error.response.data?.message || 'Mã OTP không đúng';
+        throw new Error(message);
+      } else if (error.request) {
+        throw new Error('Không thể kết nối đến server');
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  // Change Password Flow - Step 3: Change Password
+  async changePasswordByToken(phoneNumber: string, password: string): Promise<ChangePasswordResponse> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Vui lòng xác thực OTP trước');
+      }
+
+      const api = createApiInstance(token);
+      console.log('[API] Changing password for phone:', phoneNumber);
+
+      const requestData: ChangePasswordRequest = {
+        phoneNumber,
+        password
+      };
+
+      const response = await api.post('/change_pass_by_token', requestData);
+      console.log('[API] Password change response:', response.data);
+
+      // Update token with new one
+      const newToken = response.data.data?.token;
+      if (newToken) {
+        this.setToken(newToken);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('[API] Password change error:', error);
+
+      if (error.response) {
+        const message = error.response.data?.message || 'Không thể đổi mật khẩu';
+        throw new Error(message);
+      } else if (error.request) {
+        throw new Error('Không thể kết nối đến server');
+      } else {
+        throw error;
+      }
     }
   }
 }

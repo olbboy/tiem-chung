@@ -59,6 +59,7 @@ export const VaccinationHistory = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [scheduleViewMode, setScheduleViewMode] = useState<'by-antigen' | 'by-age'>('by-age');
 
   useEffect(() => {
     if (memberId) {
@@ -329,6 +330,42 @@ export const VaccinationHistory = () => {
     });
     
     return new Map([...grouped.entries()].sort((a, b) => b[0] - a[0]));
+  };
+
+  // Group phac do by age milestones for Age Timeline view
+  const groupPhacDoByAge = (records: PhacDoRecord[]) => {
+    const grouped = new Map<string, PhacDoRecord[]>();
+    records.forEach(record => {
+      // Create age key: e.g. "0-3" for 0 months, "2-3" for 2 months
+      const ageKey = `${record.tuoi_tiem}-${record.don_vi_tuoi_tiem}`;
+      if (!grouped.has(ageKey)) {
+        grouped.set(ageKey, []);
+      }
+      grouped.get(ageKey)!.push(record);
+    });
+    
+    // Sort by age (convert all to months for comparison)
+    const sortedEntries = [...grouped.entries()].sort((a, b) => {
+      const [ageA, unitA] = a[0].split('-').map(Number);
+      const [ageB, unitB] = b[0].split('-').map(Number);
+      
+      // Convert to months for comparison: months=3, years=2, days=1
+      const monthsA = unitA === 3 ? ageA : (unitA === 2 ? ageA * 12 : ageA / 30);
+      const monthsB = unitB === 3 ? ageB : (unitB === 2 ? ageB * 12 : ageB / 30);
+      
+      return monthsA - monthsB;
+    });
+    
+    return new Map(sortedEntries);
+  };
+
+  // Format age milestone for display
+  const formatAgeMilestone = (ageKey: string) => {
+    const [age, unit] = ageKey.split('-').map(Number);
+    if (age === 0) return 'Sơ sinh';
+    if (unit === 3) return `${age} tháng tuổi`;
+    if (unit === 2) return `${age} tuổi`;
+    return `${age} ngày tuổi`;
   };
 
   const getCompletionPercentage = (doseMap: Map<number, KhangNguyenRecord>) => {
@@ -997,22 +1034,56 @@ export const VaccinationHistory = () => {
               </div>
             </TabsContent>
 
-            {/* Tab 4: Phac Do (Vaccination Schedule) */}
+            {/* Tab 4: Phac Do (Vaccination Schedule) - PREMIUM AGE TIMELINE */}
             <TabsContent active={activeTab === 'schedule'}>
               <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <Clipboard className="h-6 w-6 text-emerald-600" />
-                      Phác đồ tiêm chủng
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">Lịch trình tiêm chủng theo độ tuổi</p>
+                {/* Premium Header */}
+                <div className="rounded-xl bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 p-6 shadow-lg">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+                        <Calendar className="h-7 w-7" />
+                        Lịch trình tiêm chủng
+                      </h2>
+                      <p className="text-purple-100 text-sm">
+                        Theo dõi phác đồ tiêm chủng từ sơ sinh đến trưởng thành
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      <Badge className="text-sm bg-white/20 backdrop-blur-sm border-white/30 text-white px-4 py-2">
+                        {groupPhacDoByAge(phacDoRecords).size} mốc tuổi
+                      </Badge>
+                      <Badge className="text-sm bg-white/20 backdrop-blur-sm border-white/30 text-white px-4 py-2">
+                        {groupPhacDoByAntibody(phacDoRecords).size} loại vaccine
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge variant="outline" className="text-sm px-3 py-1.5 border-purple-200 bg-purple-50 text-purple-700">
-                    <Shield className="h-3.5 w-3.5 mr-1.5" />
-                    {groupPhacDoByAntibody(phacDoRecords).size} phác đồ
-                  </Badge>
+
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg p-1.5">
+                    <button
+                      onClick={() => setScheduleViewMode('by-age')}
+                      className={`flex-1 px-4 py-2.5 rounded-md font-semibold text-sm transition-all ${
+                        scheduleViewMode === 'by-age'
+                          ? 'bg-white text-purple-700 shadow-md'
+                          : 'text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4 inline mr-2" />
+                      Theo độ tuổi
+                    </button>
+                    <button
+                      onClick={() => setScheduleViewMode('by-antigen')}
+                      className={`flex-1 px-4 py-2.5 rounded-md font-semibold text-sm transition-all ${
+                        scheduleViewMode === 'by-antigen'
+                          ? 'bg-white text-purple-700 shadow-md'
+                          : 'text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <Shield className="w-4 h-4 inline mr-2" />
+                      Theo loại vaccine
+                    </button>
+                  </div>
                 </div>
 
                 {phacDoRecords.length === 0 ? (
@@ -1020,7 +1091,132 @@ export const VaccinationHistory = () => {
                     <Clipboard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-sm text-gray-500">Chưa có phác đồ tiêm chủng</p>
                   </div>
+                ) : scheduleViewMode === 'by-age' ? (
+                  /* AGE TIMELINE VIEW */
+                  <div className="space-y-6">
+                    {Array.from(groupPhacDoByAge(phacDoRecords)).map(([ageKey, ageRecords], milestoneIndex) => {
+                      const ageMilestone = formatAgeMilestone(ageKey);
+                      
+                      // Count completed vaccines at this age
+                      const completedCount = ageRecords.filter(dose => {
+                        return khangNguyenRecords.some(
+                          kr => kr.ten_khang_nguyen === dose.ten_khang_nguyen && 
+                                kr.thu_tu_mui_tiem === dose.thu_tu &&
+                                kr.trang_thai === 2
+                        );
+                      }).length;
+                      
+                      const totalCount = ageRecords.length;
+                      const completionPercentage = Math.round((completedCount / totalCount) * 100);
+
+                      return (
+                        <div key={ageKey} className="relative">
+                          {/* Timeline Line */}
+                          {milestoneIndex > 0 && (
+                            <div className="absolute left-8 -top-6 w-0.5 h-6 bg-gradient-to-b from-purple-300 to-purple-400"></div>
+                          )}
+
+                          {/* Age Milestone Card */}
+                          <div className="relative">
+                            {/* Age Badge */}
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="relative flex-shrink-0">
+                                {/* Pulse Effect */}
+                                <div className="absolute inset-0 rounded-full bg-purple-400 animate-ping opacity-20"></div>
+                                {/* Badge */}
+                                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg">
+                                  <Baby className="h-7 w-7 text-white" />
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="text-xl font-bold text-gray-900">{ageMilestone}</h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {totalCount} loại vaccine • {completedCount} đã hoàn thành
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <div className={`text-2xl font-bold ${
+                                  completionPercentage === 100 ? 'text-emerald-600' : 'text-purple-600'
+                                }`}>
+                                  {completionPercentage}%
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">Hoàn thành</div>
+                              </div>
+                            </div>
+
+                            {/* Vaccines Grid */}
+                            <div className="ml-20 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                              {ageRecords.map((dose) => {
+                                // Check if completed
+                                const isCompleted = khangNguyenRecords.some(
+                                  kr => kr.ten_khang_nguyen === dose.ten_khang_nguyen && 
+                                        kr.thu_tu_mui_tiem === dose.thu_tu &&
+                                        kr.trang_thai === 2
+                                );
+
+                                // Find vaccination date if completed
+                                const vaccinationRecord = khangNguyenRecords.find(
+                                  kr => kr.ten_khang_nguyen === dose.ten_khang_nguyen && 
+                                        kr.thu_tu_mui_tiem === dose.thu_tu &&
+                                        kr.trang_thai === 2
+                                );
+
+                                return (
+                                  <div
+                                    key={`${dose.phac_do_id}-${dose.thu_tu}`}
+                                    className={`relative rounded-xl border-2 p-4 transition-all hover:scale-[1.02] ${
+                                      isCompleted
+                                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 shadow-md'
+                                        : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-lg'
+                                    }`}
+                                  >
+                                    {/* Completion Badge */}
+                                    {isCompleted && (
+                                      <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 shadow-lg">
+                                        <CheckCircle className="h-5 w-5 text-white" />
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-start gap-3">
+                                      {/* Vaccine Icon */}
+                                      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg shadow-sm ${
+                                        isCompleted
+                                          ? 'bg-emerald-600'
+                                          : 'bg-gradient-to-br from-purple-500 to-indigo-600'
+                                      }`}>
+                                        <Syringe className="h-5 w-5 text-white" />
+                                      </div>
+
+                                      {/* Info */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-sm text-gray-900 line-clamp-2">
+                                          {dose.ten_khang_nguyen}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-2">
+                                          <Badge variant="outline" className="text-xs border-purple-200 bg-purple-50 text-purple-700">
+                                            Mũi {dose.thu_tu}
+                                            {dose.tong_so_mui && `/${dose.tong_so_mui}`}
+                                          </Badge>
+                                          {isCompleted && vaccinationRecord?.ngay_tiem && (
+                                            <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">
+                                              <Calendar className="h-3 w-3 mr-1" />
+                                              {formatDateShort(vaccinationRecord.ngay_tiem)}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
+                  /* BY ANTIGEN VIEW */
                   <div className="space-y-4">
                     {Array.from(groupPhacDoByAntibody(phacDoRecords)).map(([antibodyName, records]) => {
                       const isExpanded = expandedSchedules.has(antibodyName);

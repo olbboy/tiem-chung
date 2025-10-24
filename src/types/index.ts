@@ -167,3 +167,55 @@ export interface VaccinationHistoryResponse {
   data: VaccinationRecord[];
   [key: string]: any;
 }
+
+// Change Password Flow Types
+export interface RecoverPasswordRequest {
+  phoneNumber: string;
+}
+
+export interface RecoverPasswordResponse {
+  code: number;
+  message: string;
+}
+
+export interface ActivateOtpRequest {
+  phoneNumber: string;
+  otp: string;
+}
+
+export interface ActivateOtpResponse {
+  code: number;
+  message: string;
+  data: {
+    user_info: {
+      thue_bao_id: number;
+      ho_ten: string | null;
+      phone_number: string;
+      email: string | null;
+      avatar: string | null;
+    };
+    token: string;
+    tokenType: string;
+  };
+}
+
+export interface ChangePasswordRequest {
+  phoneNumber: string;
+  password: string;
+}
+
+export interface ChangePasswordResponse {
+  code: number;
+  message: string;
+  data: {
+    user_info: {
+      thue_bao_id: number;
+      ho_ten: string | null;
+      phone_number: string;
+      email: string | null;
+      avatar: string | null;
+    };
+    token: string;
+    tokenType: string;
+  };
+}

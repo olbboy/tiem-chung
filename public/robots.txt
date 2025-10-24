@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /personal-info
+Disallow: /vaccination-history
+Disallow: /change-password
+Allow: /
+Allow: /login
+
+Sitemap: https://sotiemchung.vncdc.gov.vn/sitemap.xml
+

@@ -1,15 +1,15 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-interface ProtectedRouteProps {
+interface PublicRouteProps {
   children: React.ReactNode;
 }
 
 /**
- * ProtectedRoute - Protect private routes that require authentication
- * Redirect unauthenticated users to login
+ * PublicRoute - Redirect authenticated users away from public pages
+ * Use this for Login, ChangePassword pages
  */
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const PublicRoute = ({ children }: PublicRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -23,9 +23,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  // If user is authenticated, redirect to personal-info
+  if (isAuthenticated) {
+    return <Navigate to="/personal-info" replace />;
   }
 
   return <>{children}</>;
 };
+
