@@ -18,7 +18,12 @@ import {
   LogOut,
   Syringe,
   AlertCircle,
-  IdCard
+  IdCard,
+  Shield,
+  TrendingUp,
+  Activity,
+  Heart,
+  ArrowRight
 } from 'lucide-react';
 
 export const PersonalInfo = () => {
@@ -203,24 +208,65 @@ export const PersonalInfo = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Summary */}
-        <div className="mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <UserCircle className="w-6 h-6 text-blue-600" />
-              </div>
+        {/* Premium Stats Cards */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Members Card */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+            <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Danh sách thành viên
-                </h2>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  {members.length > 0
-                    ? `${members.length} thành viên đang theo dõi`
-                    : 'Chưa có thành viên nào'
-                  }
+                <p className="text-sm font-medium text-blue-100">Tổng thành viên</p>
+                <p className="mt-2 text-4xl font-bold text-white">{members.length}</p>
+                <p className="mt-2 text-sm text-blue-100 flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Đang theo dõi
                 </p>
               </div>
+              <div className="rounded-lg bg-white/20 p-2.5">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -right-4 -bottom-4 opacity-10">
+              <Users className="h-32 w-32 text-white" />
+            </div>
+          </div>
+
+          {/* Health Status Card */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-100">Sức khỏe</p>
+                <p className="mt-2 text-4xl font-bold text-white">100%</p>
+                <p className="mt-2 text-sm text-emerald-100 flex items-center gap-1">
+                  <Heart className="h-3.5 w-3.5" />
+                  Theo dõi tốt
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/20 p-2.5">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -right-4 -bottom-4 opacity-10">
+              <Heart className="h-32 w-32 text-white" />
+            </div>
+          </div>
+
+          {/* Vaccination Protection Card */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-100">Bảo vệ</p>
+                <p className="mt-2 text-4xl font-bold text-white">Active</p>
+                <p className="mt-2 text-sm text-purple-100 flex items-center gap-1">
+                  <Shield className="h-3.5 w-3.5" />
+                  Vaccine đầy đủ
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/20 p-2.5">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="absolute -right-4 -bottom-4 opacity-10">
+              <Shield className="h-32 w-32 text-white" />
             </div>
           </div>
         </div>
@@ -249,25 +295,37 @@ export const PersonalInfo = () => {
               return (
                 <Card
                   key={member.doi_tuong_id}
-                  className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200"
+                  className="group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2 hover:border-blue-300 hover:scale-[1.02] bg-white relative"
                 >
+                  {/* Gradient Accent Line */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                  
                   {/* Card Header with gradient */}
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-4">
-                    <div className="flex justify-between items-start gap-3">
+                  <CardHeader className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 pb-5 pt-6 relative overflow-hidden">
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-5">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full blur-3xl"></div>
+                    </div>
+                    
+                    <div className="flex justify-between items-start gap-3 relative z-10">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="bg-white p-2 rounded-lg shadow-sm">
-                          <UserCircle className="w-6 h-6 text-blue-600" />
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                          <UserCircle className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg text-gray-900 leading-tight line-clamp-2">
+                          <CardTitle className="text-lg font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
                             {member.ho_ten}
                           </CardTitle>
-                          <div className="flex items-center gap-2 mt-1.5">
+                          <div className="flex items-center gap-2 mt-2">
                             <Badge
                               variant={member.gioi_tinh === 0 ? 'default' : 'secondary'}
-                              className="text-xs"
+                              className="text-xs font-semibold shadow-sm"
                             >
-                              {member.gioi_tinh === 0 ? 'Nam' : member.gioi_tinh === 1 ? 'Nữ' : 'Khác'}
+                              {member.gioi_tinh === 0 ? '👨 Nam' : member.gioi_tinh === 1 ? '👩 Nữ' : 'Khác'}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Active
                             </Badge>
                           </div>
                         </div>
@@ -276,52 +334,60 @@ export const PersonalInfo = () => {
                   </CardHeader>
 
                   {/* Card Content */}
-                  <CardContent className="pt-6 space-y-3.5">
+                  <CardContent className="pt-6 space-y-4">
                     {/* Primary Information */}
                     {member.ngay_sinh && (
-                      <div className="flex items-center gap-2.5 text-sm">
-                        <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors">
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-white shadow-sm">
+                          <Calendar className="w-4 h-4 text-blue-600" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-gray-600">Ngày sinh:</span>
-                          <span className="ml-2 text-gray-900 font-medium">
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">Ngày sinh</div>
+                          <div className="text-sm text-gray-900 font-semibold">
                             {member.ngay_sinh}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {member.dien_thoai && (
-                      <div className="flex items-center gap-2.5 text-sm">
-                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors">
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-white shadow-sm">
+                          <Phone className="w-4 h-4 text-emerald-600" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-gray-600">Điện thoại:</span>
-                          <span className="ml-2 text-gray-900 font-medium">
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">Điện thoại</div>
+                          <div className="text-sm text-gray-900 font-semibold">
                             {member.dien_thoai}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {member.dia_chi && (
-                      <div className="flex items-start gap-2.5 text-sm">
-                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors">
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-white shadow-sm mt-0.5">
+                          <MapPin className="w-4 h-4 text-purple-600" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-gray-600">Địa chỉ:</span>
-                          <span className="ml-2 text-gray-900 font-medium line-clamp-2">
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">Địa chỉ</div>
+                          <div className="text-sm text-gray-900 font-semibold line-clamp-2">
                             {member.dia_chi}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {member.email && (
-                      <div className="flex items-center gap-2.5 text-sm">
-                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors">
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-white shadow-sm">
+                          <Mail className="w-4 h-4 text-amber-600" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-gray-600">Email:</span>
-                          <span className="ml-2 text-gray-900 font-medium truncate block">
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">Email</div>
+                          <div className="text-sm text-gray-900 font-semibold truncate">
                             {member.email}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -369,13 +435,14 @@ export const PersonalInfo = () => {
                   </CardContent>
 
                   {/* Card Footer */}
-                  <CardFooter className="bg-gray-50 border-t border-gray-100">
+                  <CardFooter className="bg-gradient-to-r from-gray-50 to-blue-50/30 border-t-2 border-gray-100 pt-4">
                     <Button
                       onClick={() => handleViewHistory(member)}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm"
+                      className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 group/btn text-white font-semibold py-3"
                     >
-                      <Syringe className="w-4 h-4 mr-2" />
+                      <Syringe className="w-4 h-4 mr-2 group-hover/btn:rotate-12 transition-transform" />
                       Xem lịch sử tiêm chủng
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>
                   </CardFooter>
                 </Card>
