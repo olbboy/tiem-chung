@@ -34,7 +34,14 @@ import {
   IdCard,
   Clipboard,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  TrendingUp,
+  Activity,
+  Target,
+  Award,
+  Baby,
+  Heart,
+  Search
 } from 'lucide-react';
 
 export const VaccinationHistory = () => {
@@ -51,6 +58,7 @@ export const VaccinationHistory = () => {
   const [selectedVaccine, setSelectedVaccine] = useState<VacxinRecord | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (memberId) {
@@ -293,6 +301,51 @@ export const VaccinationHistory = () => {
       </Badge>
     );
   };
+
+  const calculateStatistics = () => {
+    const totalDoses = khangNguyenRecords.length;
+    const completedDoses = khangNguyenRecords.filter(r => r.trang_thai === 2).length;
+    const pendingDoses = khangNguyenRecords.filter(r => r.trang_thai === 1).length;
+    const uniqueAntigens = groupKhangNguyenByAntigen(khangNguyenRecords).size;
+    const completionRate = totalDoses > 0 ? Math.round((completedDoses / totalDoses) * 100) : 0;
+
+    return { totalDoses, completedDoses, pendingDoses, uniqueAntigens, completionRate };
+  };
+
+  const groupHistoryByYear = (records: VacxinRecord[]) => {
+    const grouped = new Map<number, VacxinRecord[]>();
+    
+    records.forEach(record => {
+      if (!record.ngay_tiem) return;
+      
+      const match = record.ngay_tiem.match(/\/(\d{4})/);
+      if (!match) return;
+      
+      const year = parseInt(match[1]);
+      if (!grouped.has(year)) {
+        grouped.set(year, []);
+      }
+      grouped.get(year)!.push(record);
+    });
+    
+    return new Map([...grouped.entries()].sort((a, b) => b[0] - a[0]));
+  };
+
+  const getCompletionPercentage = (doseMap: Map<number, KhangNguyenRecord>) => {
+    const maxDose = Math.max(...Array.from(doseMap.keys()));
+    const completedDoses = Array.from(doseMap.values()).filter(r => r.trang_thai === 2).length;
+    return Math.round((completedDoses / maxDose) * 100);
+  };
+
+  const filteredVacxinRecords = vacxinRecords.filter(record => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      record.ten_vacxin?.toLowerCase().includes(query) ||
+      record.khang_nguyen?.toLowerCase().includes(query) ||
+      record.co_so_tiem_chung?.toLowerCase().includes(query)
+    );
+  });
 
   if (loading) {
     return (
@@ -591,127 +644,351 @@ export const VaccinationHistory = () => {
 
             {/* Tab 2: Overview */}
             <TabsContent active={activeTab === 'overview'}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Tổng quan kháng nguyên</h2>
-                  <Badge variant="outline" className="text-sm">
-                    {groupKhangNguyenByAntigen(khangNguyenRecords).size} loại
-                  </Badge>
-                </div>
+              <div className="space-y-6">
                 {khangNguyenRecords.length === 0 ? (
                   <div className="text-center py-12">
                     <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-sm text-gray-500">Chưa có lịch sử kháng nguyên</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b-2 border-gray-200">
-                          <th className="text-left p-3 bg-gray-50 font-semibold text-sm text-gray-700 sticky left-0 z-10">
-                            Kháng nguyên
-                          </th>
-                          {[1, 2, 3, 4, 5].map(doseNum => (
-                            <th key={doseNum} className="text-center p-3 bg-gray-50 font-semibold text-sm text-gray-700 min-w-[140px]">
-                              {doseNum}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Array.from(groupKhangNguyenByAntigen(khangNguyenRecords)).map(([antigenKey, doseMap]) => {
-                          const firstRecord = Array.from(doseMap.values())[0];
-                          const antigenName = firstRecord.ten_khang_nguyen;
-                          
-                          return (
-                            <tr key={antigenKey} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="p-3 font-medium text-gray-900 text-sm sticky left-0 bg-white">
-                                {antigenName}
-                              </td>
-                              {[1, 2, 3, 4, 5].map(doseNum => {
-                                const record = doseMap.get(doseNum);
-                                
-                                if (!record) {
-                                  return <td key={doseNum} className="p-3 text-center"></td>;
-                                }
-                                
-                                return (
-                                  <td key={doseNum} className="p-3">
-                                    <div className={`rounded-lg p-2.5 text-center transition-all ${
-                                      record.trang_thai === 2 
-                                        ? 'bg-emerald-100 border border-emerald-200' 
-                                        : 'bg-gray-100 border border-gray-200'
-                                    }`}>
-                                      {record.ngay_tiem && (
-                                        <div className="text-xs font-medium text-gray-700 mb-1">
-                                          {formatDateShort(record.ngay_tiem)}
-                                        </div>
-                                      )}
-                                      <div className={`text-xs font-semibold ${
-                                        record.trang_thai === 2 ? 'text-emerald-700' : 'text-gray-600'
-                                      }`}>
-                                        {record.trang_thai === 2 ? 'Đã tiêm' : 'Chưa tiêm'}
-                                      </div>
+                  <>
+                    {/* Statistics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Total Doses */}
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-blue-100">Tổng mũi tiêm</p>
+                            <p className="mt-2 text-3xl font-bold text-white">{calculateStatistics().totalDoses}</p>
+                          </div>
+                          <div className="rounded-lg bg-white/20 p-2.5">
+                            <Syringe className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 opacity-10">
+                          <Syringe className="h-24 w-24 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Completed */}
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-emerald-100">Đã hoàn thành</p>
+                            <p className="mt-2 text-3xl font-bold text-white">{calculateStatistics().completedDoses}</p>
+                          </div>
+                          <div className="rounded-lg bg-white/20 p-2.5">
+                            <CheckCircle className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 opacity-10">
+                          <Award className="h-24 w-24 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Pending */}
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-5 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-amber-100">Chưa tiêm</p>
+                            <p className="mt-2 text-3xl font-bold text-white">{calculateStatistics().pendingDoses}</p>
+                          </div>
+                          <div className="rounded-lg bg-white/20 p-2.5">
+                            <Clock className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 opacity-10">
+                          <Target className="h-24 w-24 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Completion Rate */}
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-5 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-purple-100">Tỷ lệ hoàn thành</p>
+                            <p className="mt-2 text-3xl font-bold text-white">{calculateStatistics().completionRate}%</p>
+                          </div>
+                          <div className="rounded-lg bg-white/20 p-2.5">
+                            <TrendingUp className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 opacity-10">
+                          <Activity className="h-24 w-24 text-white" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vaccination Table */}
+                    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                      <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Shield className="h-5 w-5 text-emerald-600" />
+                            Lịch sử tiêm theo kháng nguyên
+                          </h3>
+                          <Badge variant="outline" className="text-sm border-emerald-200 bg-emerald-50 text-emerald-700">
+                            {groupKhangNguyenByAntigen(khangNguyenRecords).size} loại kháng nguyên
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50/80 border-b-2 border-gray-200">
+                              <th className="text-left p-4 font-semibold text-sm text-gray-700 sticky left-0 z-10 bg-gray-50/80 backdrop-blur-sm min-w-[180px]">
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-4 w-4 text-gray-500" />
+                                  Kháng nguyên
+                                </div>
+                              </th>
+                              {[1, 2, 3, 4, 5].map(doseNum => (
+                                <th key={doseNum} className="text-center p-4 font-semibold text-sm text-gray-700 min-w-[150px]">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs">
+                                      {doseNum}
+                                    </div>
+                                    <span className="text-xs text-gray-500">Mũi {doseNum}</span>
+                                  </div>
+                                </th>
+                              ))}
+                              <th className="text-center p-4 font-semibold text-sm text-gray-700 min-w-[120px]">
+                                Tiến độ
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {Array.from(groupKhangNguyenByAntigen(khangNguyenRecords)).map(([antigenKey, doseMap]) => {
+                              const firstRecord = Array.from(doseMap.values())[0];
+                              const antigenName = firstRecord.ten_khang_nguyen;
+                              const completion = getCompletionPercentage(doseMap);
+                              
+                              return (
+                                <tr key={antigenKey} className="hover:bg-blue-50/30 transition-colors group">
+                                  <td className="p-4 font-medium text-gray-900 text-sm sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                                      {antigenName}
                                     </div>
                                   </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                  {[1, 2, 3, 4, 5].map(doseNum => {
+                                    const record = doseMap.get(doseNum);
+                                    
+                                    if (!record) {
+                                      return (
+                                        <td key={doseNum} className="p-4 text-center">
+                                          <div className="rounded-lg p-3 bg-gray-50/50 border border-dashed border-gray-200">
+                                            <span className="text-xs text-gray-400">—</span>
+                                          </div>
+                                        </td>
+                                      );
+                                    }
+                                    
+                                    return (
+                                      <td key={doseNum} className="p-4">
+                                        <div className={`rounded-lg p-3 text-center transition-all shadow-sm hover:shadow-md ${
+                                          record.trang_thai === 2 
+                                            ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300' 
+                                            : 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200'
+                                        }`}>
+                                          {record.ngay_tiem && (
+                                            <div className="text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-center gap-1">
+                                              <Calendar className="h-3 w-3" />
+                                              {formatDateShort(record.ngay_tiem)}
+                                            </div>
+                                          )}
+                                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+                                            record.trang_thai === 2 
+                                              ? 'bg-emerald-600 text-white' 
+                                              : 'bg-gray-400 text-white'
+                                          }`}>
+                                            {record.trang_thai === 2 ? (
+                                              <><CheckCircle className="h-3 w-3" /> Hoàn thành</>
+                                            ) : (
+                                              <><Clock className="h-3 w-3" /> Chưa tiêm</>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="p-4">
+                                    <div className="flex flex-col items-center gap-2">
+                                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full transition-all duration-500 ${
+                                            completion === 100 
+                                              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' 
+                                              : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                                          }`}
+                                          style={{ width: `${completion}%` }}
+                                        ></div>
+                                      </div>
+                                      <span className={`text-xs font-bold ${
+                                        completion === 100 ? 'text-emerald-600' : 'text-blue-600'
+                                      }`}>
+                                        {completion}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </TabsContent>
 
             {/* Tab 3: History */}
             <TabsContent active={activeTab === 'history'}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Lịch sử tiêm chi tiết</h2>
-                  <Badge variant="outline" className="text-sm">
-                    {vacxinRecords.length} mũi
-                  </Badge>
+              <div className="space-y-6">
+                {/* Search and Filter */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm vaccine, kháng nguyên hoặc cơ sở..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-sm px-3 py-1.5 border-blue-200 bg-blue-50 text-blue-700">
+                      <Syringe className="h-3.5 w-3.5 mr-1.5" />
+                      {filteredVacxinRecords.length} kết quả
+                    </Badge>
+                  </div>
                 </div>
+
                 {vacxinRecords.length === 0 ? (
                   <div className="text-center py-12">
                     <Syringe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-sm text-gray-500">Chưa có lịch sử vaccine</p>
                   </div>
+                ) : filteredVacxinRecords.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Không tìm thấy kết quả phù hợp</p>
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      Xóa bộ lọc
+                    </button>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
-                    {vacxinRecords.map((record, index) => (
-                      <div
-                        key={`vacxin-${record.lich_su_tiem_id}-${record.thu_tu_mui_tiem}-${index}`}
-                        onClick={() => handleVaccineClick(record)}
-                        className="p-4 rounded-lg border bg-white hover:shadow-md transition-all cursor-pointer group"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
-                            <Syringe className="w-4 h-4 text-emerald-600" />
+                  <div className="space-y-8">
+                    {Array.from(groupHistoryByYear(filteredVacxinRecords)).map(([year, yearRecords]) => (
+                      <div key={year} className="relative">
+                        {/* Year Header */}
+                        <div className="sticky top-20 z-20 mb-6">
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg">
+                            <Calendar className="h-4 w-4" />
+                            <span className="font-bold text-sm">Năm {year}</span>
+                            <Badge variant="outline" className="ml-1 bg-white/20 border-white/30 text-white text-xs">
+                              {yearRecords.length} mũi
+                            </Badge>
                           </div>
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-medium text-gray-900 group-hover:text-emerald-600 transition-colors">
-                                {record.ten_vacxin || 'Chưa rõ tên vaccine'}
-                              </h3>
-                              {getStatusBadge(record.trang_thai)}
+                        </div>
+
+                        {/* Timeline */}
+                        <div className="relative pl-8 space-y-6">
+                          {/* Timeline Line */}
+                          <div className="absolute left-[15px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-400 via-emerald-300 to-emerald-200"></div>
+
+                          {yearRecords.map((record, index) => (
+                            <div
+                              key={`vacxin-${record.lich_su_tiem_id}-${record.thu_tu_mui_tiem}-${index}`}
+                              onClick={() => handleVaccineClick(record)}
+                              className="relative group cursor-pointer"
+                            >
+                              {/* Timeline Dot */}
+                              <div className="absolute -left-[23px] top-6 z-10">
+                                <div className="relative">
+                                  <div className="h-4 w-4 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 border-4 border-white shadow-lg group-hover:scale-125 transition-transform"></div>
+                                  <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-20"></div>
+                                </div>
+                              </div>
+
+                              {/* Card */}
+                              <div className="ml-2 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 overflow-hidden group-hover:scale-[1.02]">
+                                <div className="p-5">
+                                  <div className="flex items-start gap-4">
+                                    {/* Icon */}
+                                    <div className="flex-shrink-0">
+                                      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 group-hover:from-emerald-200 group-hover:to-emerald-300 transition-all">
+                                        <Syringe className="h-6 w-6 text-emerald-700" />
+                                      </div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                      {/* Header */}
+                                      <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div>
+                                          <h3 className="font-bold text-lg text-gray-900 group-hover:text-emerald-700 transition-colors mb-1">
+                                            {record.ten_vacxin || 'Chưa rõ tên vaccine'}
+                                          </h3>
+                                          <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                                            <Shield className="h-3.5 w-3.5 text-gray-400" />
+                                            {record.khang_nguyen}
+                                          </p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                          {getStatusBadge(record.trang_thai)}
+                                          {record.thu_tu_mui_tiem && (
+                                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                                              Mũi {record.thu_tu_mui_tiem}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Details Grid */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                                        {record.ngay_tiem && (
+                                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 group-hover:bg-emerald-50 transition-colors">
+                                            <Clock className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                                            <div className="flex-1">
+                                              <div className="text-xs text-gray-500">Ngày tiêm</div>
+                                              <div className="text-sm font-semibold text-gray-900">{formatDate(record.ngay_tiem)}</div>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {record.co_so_tiem_chung && (
+                                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 group-hover:bg-emerald-50 transition-colors">
+                                            <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-xs text-gray-500">Cơ sở</div>
+                                              <div className="text-sm font-semibold text-gray-900 truncate">{record.co_so_tiem_chung}</div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Footer */}
+                                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                                          <FileText className="h-3 w-3" />
+                                          Nhấn để xem chi tiết
+                                        </div>
+                                        <div className="text-emerald-600 group-hover:translate-x-1 transition-transform">
+                                          <ChevronDown className="h-4 w-4 -rotate-90" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            {record.co_so_tiem_chung && (
-                              <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                                <span>tại {record.co_so_tiem_chung}</span>
-                              </div>
-                            )}
-                            {record.ngay_tiem && (
-                              <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                                <span>lúc {formatDate(record.ngay_tiem)}</span>
-                              </div>
-                            )}
-                          </div>
+                          ))}
                         </div>
                       </div>
                     ))}
@@ -722,106 +999,230 @@ export const VaccinationHistory = () => {
 
             {/* Tab 4: Phac Do (Vaccination Schedule) */}
             <TabsContent active={activeTab === 'schedule'}>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Header */}
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Phác đồ tiêm chủng</h2>
-                  <Badge variant="outline" className="text-sm">
-                    {groupPhacDoByAntibody(phacDoRecords).size} loại
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                      <Clipboard className="h-6 w-6 text-emerald-600" />
+                      Phác đồ tiêm chủng
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">Lịch trình tiêm chủng theo độ tuổi</p>
+                  </div>
+                  <Badge variant="outline" className="text-sm px-3 py-1.5 border-purple-200 bg-purple-50 text-purple-700">
+                    <Shield className="h-3.5 w-3.5 mr-1.5" />
+                    {groupPhacDoByAntibody(phacDoRecords).size} phác đồ
                   </Badge>
                 </div>
+
                 {phacDoRecords.length === 0 ? (
                   <div className="text-center py-12">
                     <Clipboard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-sm text-gray-500">Chưa có phác đồ tiêm chủng</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {Array.from(groupPhacDoByAntibody(phacDoRecords)).map(([antibodyName, records]) => {
                       const isExpanded = expandedSchedules.has(antibodyName);
-                      const totalDoses = records[0]?.tong_so_mui;
+                      const totalDoses = records[0]?.tong_so_mui || records.length;
+                      
+                      // Calculate completion progress by checking actual vaccination history
+                      const completedDoses = khangNguyenRecords.filter(
+                        kr => kr.ten_khang_nguyen === antibodyName && kr.trang_thai === 2
+                      ).length;
+                      const completionPercentage = totalDoses > 0 ? Math.round((completedDoses / totalDoses) * 100) : 0;
 
                       return (
                         <div
                           key={antibodyName}
-                          className="rounded-lg border bg-white overflow-hidden"
+                          className="rounded-xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all"
                         >
                           {/* Header - Clickable */}
                           <div
                             onClick={() => toggleScheduleExpanded(antibodyName)}
-                            className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                            className="p-5 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all group"
                           >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-start gap-3 flex-1">
-                                <div className="p-2 rounded-lg bg-blue-100">
-                                  <Shield className="w-4 h-4 text-blue-600" />
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-4 flex-1">
+                                {/* Icon */}
+                                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
+                                  <Shield className="w-6 h-6 text-blue-700" />
                                 </div>
+
+                                {/* Content */}
                                 <div className="flex-1">
-                                  <h3 className="font-medium text-gray-900 mb-1">{antibodyName}</h3>
-                                  {totalDoses && (
-                                    <div className="text-sm text-gray-600">
-                                      {totalDoses} mũi tiêm
+                                  <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
+                                    {antibodyName}
+                                  </h3>
+                                  
+                                  {/* Progress Bar */}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-gray-600 font-medium">
+                                        {completedDoses} / {totalDoses} mũi hoàn thành
+                                      </span>
+                                      <span className={`font-bold ${
+                                        completionPercentage === 100 ? 'text-emerald-600' : 'text-blue-600'
+                                      }`}>
+                                        {completionPercentage}%
+                                      </span>
                                     </div>
-                                  )}
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-700 ${
+                                          completionPercentage === 100
+                                            ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700'
+                                            : 'bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600'
+                                        }`}
+                                        style={{ width: `${completionPercentage}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+
+                                  {/* Stats */}
+                                  <div className="flex items-center gap-3 mt-3">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                      <CheckCircle className="h-3 w-3" />
+                                      {completedDoses} hoàn thành
+                                    </div>
+                                    {(totalDoses - completedDoses) > 0 && (
+                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                        <Clock className="h-3 w-3" />
+                                        {totalDoses - completedDoses} còn lại
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {records.length} liều
-                                </Badge>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-gray-400" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                                )}
+
+                              {/* Toggle Icon */}
+                              <div className="flex-shrink-0 pt-2">
+                                <div className={`p-2 rounded-lg transition-all ${
+                                  isExpanded ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-600'
+                                }`}>
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-5 h-5" />
+                                  ) : (
+                                    <ChevronDown className="w-5 h-5" />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
 
                           {/* Expanded Content */}
                           {isExpanded && (
-                            <div className="border-t bg-gray-50">
+                            <div className="border-t-2 border-gray-200">
                               {/* Description */}
                               {records[0]?.mo_ta && (
-                                <div className="p-4 border-b bg-blue-50/50">
-                                  <div className="text-xs font-medium text-blue-600 mb-2 uppercase tracking-wide">
-                                    Thông tin bệnh
+                                <div className="p-5 bg-gradient-to-r from-blue-50/50 to-purple-50/50 border-b border-gray-200">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <FileText className="h-4 w-4 text-blue-600" />
+                                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wide">
+                                      Thông tin bệnh
+                                    </div>
                                   </div>
-                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                  <p className="text-sm text-gray-700 leading-relaxed pl-6">
                                     {records[0].mo_ta}
                                   </p>
                                 </div>
                               )}
 
                               {/* Dose Schedule */}
-                              <div className="p-4 space-y-2">
-                                <div className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
-                                  Lịch trình tiêm
-                                </div>
-                                {records.map((dose) => (
-                                  <div
-                                    key={`${dose.phac_do_id}-${dose.thu_tu}`}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-white border"
-                                  >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold flex-shrink-0">
-                                      {dose.thu_tu}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="text-sm font-medium text-gray-900">
-                                        Mũi {dose.thu_tu}
-                                        {dose.tong_so_mui && ` / ${dose.tong_so_mui}`}
-                                      </div>
-                                      <div className="text-xs text-gray-600 mt-0.5">
-                                        Độ tuổi: {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
-                                      </Badge>
-                                    </div>
+                              <div className="p-5">
+                                <div className="flex items-center gap-2 mb-4">
+                                  <Calendar className="h-4 w-4 text-purple-600" />
+                                  <div className="text-xs font-bold text-purple-700 uppercase tracking-wide">
+                                    Lịch trình tiêm ({records.length} liều)
                                   </div>
-                                ))}
+                                </div>
+
+                                <div className="space-y-3">
+                                  {records.map((dose, index) => {
+                                    // Check if this dose is completed
+                                    const isCompleted = khangNguyenRecords.some(
+                                      kr => kr.ten_khang_nguyen === antibodyName && 
+                                            kr.thu_tu_mui_tiem === dose.thu_tu &&
+                                            kr.trang_thai === 2
+                                    );
+
+                                    const getAgeIcon = (donVi: number) => {
+                                      if (donVi === 3) return Baby; // months
+                                      if (donVi === 2) return User; // years
+                                      return Heart; // days
+                                    };
+
+                                    const AgeIcon = getAgeIcon(dose.don_vi_tuoi_tiem);
+
+                                    return (
+                                      <div
+                                        key={`${dose.phac_do_id}-${dose.thu_tu}`}
+                                        className={`relative rounded-xl border-2 overflow-hidden transition-all ${
+                                          isCompleted
+                                            ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-300 shadow-sm'
+                                            : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+                                        }`}
+                                      >
+                                        {/* Completion Ribbon */}
+                                        {isCompleted && (
+                                          <div className="absolute top-0 right-0">
+                                            <div className="relative">
+                                              <div className="absolute top-0 right-0 w-0 h-0 border-t-[40px] border-r-[40px] border-t-emerald-600 border-r-transparent"></div>
+                                              <CheckCircle className="absolute top-1 right-1 h-4 w-4 text-white z-10" />
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        <div className="p-4 flex items-center gap-4">
+                                          {/* Dose Number */}
+                                          <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold flex-shrink-0 shadow-sm ${
+                                            isCompleted
+                                              ? 'bg-emerald-600 text-white'
+                                              : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                                          }`}>
+                                            {dose.thu_tu}
+                                          </div>
+
+                                          {/* Info */}
+                                          <div className="flex-1">
+                                            <div className="text-base font-bold text-gray-900 mb-1">
+                                              Mũi {dose.thu_tu}
+                                              {dose.tong_so_mui && <span className="text-gray-400 font-normal"> / {dose.tong_so_mui}</span>}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                              <AgeIcon className="h-4 w-4 text-gray-400" />
+                                              <span className="font-medium">
+                                                Độ tuổi: {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* Status Badge */}
+                                          <div>
+                                            {isCompleted ? (
+                                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold shadow-sm">
+                                                <CheckCircle className="h-3.5 w-3.5" />
+                                                Đã tiêm
+                                              </div>
+                                            ) : (
+                                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold shadow-sm">
+                                                <Target className="h-3.5 w-3.5" />
+                                                {formatAgeUnit(dose.tuoi_tiem, dose.don_vi_tuoi_tiem)}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Connecting Line for next dose */}
+                                        {index < records.length - 1 && (
+                                          <div className="flex justify-center py-1">
+                                            <div className="w-0.5 h-4 bg-gradient-to-b from-gray-300 to-gray-200"></div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
                           )}
