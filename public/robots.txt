@@ -6,5 +6,5 @@ Disallow: /change-password
 Allow: /
 Allow: /login
 
-Sitemap: https://sotiemchung.vncdc.gov.vn/sitemap.xml
+Sitemap: https://sotiemchung.com/sitemap.xml
 

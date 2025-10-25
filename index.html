@@ -48,8 +48,50 @@
     <!-- Performance -->
     <link rel="preconnect" href="https://api-stc-v2.vncdc.gov.vn" />
     <link rel="dns-prefetch" href="https://api-stc-v2.vncdc.gov.vn" />
+    
+    <!-- Google Tag Manager -->
+    <!-- Replace VITE_GTM_ID with your actual GTM ID (e.g., GTM-XXXXXXX) -->
+    <script>
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','VITE_GTM_ID');
+    </script>
+    <!-- End Google Tag Manager -->
+    
+    <!-- Google Analytics -->
+    <!-- Replace VITE_GA_MEASUREMENT_ID with your actual GA4 Measurement ID (e.g., G-XXXXXXXXXX) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=VITE_GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // Check if GA ID is configured
+      const gaId = import.meta.env?.VITE_GA_MEASUREMENT_ID || 'VITE_GA_MEASUREMENT_ID';
+      if (gaId && gaId !== 'VITE_GA_MEASUREMENT_ID') {
+        gtag('config', gaId, {
+          'send_page_view': false, // We'll track page views manually for SPA
+          'anonymize_ip': true,
+          'cookie_flags': 'SameSite=None;Secure'
+        });
+      }
+    </script>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <!-- Replace VITE_GTM_ID with your actual GTM ID (e.g., GTM-XXXXXXX) -->
+    <noscript>
+      <iframe 
+        src="https://www.googletagmanager.com/ns.html?id=VITE_GTM_ID" 
+        height="0" 
+        width="0" 
+        style="display:none;visibility:hidden"
+      ></iframe>
+    </noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    
     <noscript>
       <div style="display: flex; align-items: center; justify-center: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif; padding: 20px; text-align: center;">
         <div>

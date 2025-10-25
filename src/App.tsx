@@ -6,10 +6,18 @@ import { Login } from './pages/Login';
 import { PersonalInfo } from './pages/PersonalInfo';
 import { VaccinationHistory } from './pages/VaccinationHistory';
 import { ChangePassword } from './pages/ChangePassword';
+import { usePageTracking } from './lib/analytics';
+
+// Component to handle page tracking - must be inside Router
+function AnalyticsTracker() {
+  usePageTracking();
+  return null;
+}
 
 function App() {
   return (
     <Router>
+      <AnalyticsTracker />
       <AuthProvider>
         <Routes>
           {/* Public routes - redirect if authenticated */}

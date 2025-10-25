@@ -41,7 +41,9 @@ import {
   Award,
   Baby,
   Heart,
-  Search
+  Search,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export const VaccinationHistory = () => {
@@ -60,6 +62,21 @@ export const VaccinationHistory = () => {
   const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [scheduleViewMode, setScheduleViewMode] = useState<'by-antigen' | 'by-age'>('by-age');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Function to copy text to clipboard
+  const handleCopy = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      // Reset after 2 seconds
+      setTimeout(() => {
+        setCopiedField(null);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   useEffect(() => {
     if (memberId) {
@@ -476,7 +493,7 @@ export const VaccinationHistory = () => {
                   onClick={() => setActiveTab('personal-info')}
                 >
                   <User className="w-4 h-4 mr-2" />
-                  Cá nhân
+                  Thông tin
                 </TabsTrigger>
                 <TabsTrigger
                   active={activeTab === 'overview'}
@@ -497,7 +514,7 @@ export const VaccinationHistory = () => {
                   onClick={() => setActiveTab('schedule')}
                 >
                   <Clipboard className="w-4 h-4 mr-2" />
-                  Phác đồ
+                  Lịch trình
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -524,12 +541,24 @@ export const VaccinationHistory = () => {
                       </div>
 
                       {memberDetail.ma_doi_tuong && (
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                          <IdCard className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 group hover:bg-blue-50 transition-colors relative">
+                          <IdCard className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" />
                           <div className="flex-1 space-y-1">
                             <div className="text-xs text-gray-500">Mã đối tượng</div>
                             <div className="text-sm font-medium text-gray-900">{memberDetail.ma_doi_tuong}</div>
                           </div>
+                          <button
+                            onClick={() => handleCopy(memberDetail.ma_doi_tuong || '', 'ma_doi_tuong')}
+                            className="flex-shrink-0 p-1.5 rounded-md hover:bg-blue-100 transition-all duration-200 group/copy"
+                            title="Sao chép mã đối tượng"
+                            aria-label="Sao chép mã đối tượng"
+                          >
+                            {copiedField === 'ma_doi_tuong' ? (
+                              <Check className="h-4 w-4 text-emerald-600 animate-in zoom-in duration-200" />
+                            ) : (
+                              <Copy className="h-4 w-4 text-gray-400 group-hover/copy:text-blue-600 transition-colors" />
+                            )}
+                          </button>
                         </div>
                       )}
 
