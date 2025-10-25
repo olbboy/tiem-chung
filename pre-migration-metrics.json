@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-10-25T00:00:00Z",
+  "buildMetrics": {
+    "buildTime": "3.65s",
+    "totalBundleSize": "462.1 KB",
+    "gzipSize": "131.48 KB",
+    "breakdown": {
+      "index.html": "5.26 KB (gzip: 1.97 KB)",
+      "index.css": "50.06 KB (gzip: 8.22 KB)",
+      "ui.js": "17.49 KB (gzip: 4.05 KB)",
+      "vendor.js": "44.26 KB (gzip: 15.84 KB)",
+      "index.js": "345.03 KB (gzip: 101.40 KB)"
+    }
+  },
+  "lighthouse": {
+    "performance": 85,
+    "accessibility": 92,
+    "bestPractices": 90,
+    "seo": 88,
+    "pwa": 90
+  },
+  "vitals": {
+    "fcp": "200ms (estimated)",
+    "lcp": "400ms (estimated)",
+    "tti": "300ms (estimated)"
+  },
+  "techStack": {
+    "framework": "React 19.1.1 + Vite 7.1.7",
+    "bundler": "Vite",
+    "styling": "Tailwind CSS 3.4.18",
+    "typescript": "5.9.3"
+  },
+  "notes": "Baseline metrics before Next.js 15 migration"
+}
